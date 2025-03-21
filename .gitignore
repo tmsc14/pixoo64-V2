@@ -4,3 +4,4 @@ venv/
 .venv/
 .env
 /*.sh
+refactor.txt

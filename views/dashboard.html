@@ -3,96 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KPI Dashboard</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            padding: 20px;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-        h1 {
-            color: #3a3b3c;
-        }
-        .kpi, .option-container {
-            margin: 0 auto 30px;
-            max-width: 400px;
-            background-color: #fff;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        h2 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: #555;
-        }
-        input[type=number], input[type=color], select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            margin-bottom: 20px;
-        }
-        button {
-            display: block;
-            width: 100%;
-            background-color: #0056b3;
-            color: #fff;
-            padding: 15px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #004494;
-        }
-    </style>
+    <title>Pixoo64 Dashboard</title>
+    <link rel="stylesheet" href="styles/dashboard.css">
+
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleDarkMode()">🌓</button>
+    
+    <div class="container">
+        <header class="header">
+            <h1>Pixoo64 Control Dashboard</h1>
+            <p>Manage your display settings and themes</p>
+        </header>
+
+        <section class="theme-selector">
+            <div class="theme-card active" data-theme="flags_attendance">
+                <img src="img/theme-thumbnails/flags-thumb.png" alt="Flags & Attendance">
+                <h3>Flags & Attendance</h3>
+            </div>
+            <div class="theme-card" data-theme="beer_consumed">
+                <img src="img/theme-thumbnails/beer-thumb.png" alt="Beer Consumed">
+                <h3>Beer Consumed</h3>
+            </div>
+        </section>
+
+        <div class="settings-container">
+            <div class="settings-card">
+                <h2>Theme Settings</h2>
+                
+                <div class="form-group">
+                    <label for="country-select">Country</label>
+                    <select id="country-select">
+                        <option value="Australia">Australia</option>
+                        <option value="Philippines">Philippines</option>
+                        <option value="United States">United States</option>
+                        <option value="India">India</option>
+                        <option value="Colombia">Colombia</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Date & Time Display</label>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-date-time">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h2>Color Settings</h2>
+                
+                <div class="color-picker-group">
+                    <div class="form-group">
+                        <label>Background</label>
+                        <div class="color-picker-container">
+                            <div class="color-preview" id="background-preview"></div>
+                            <input type="color" id="background-color" class="color-picker-input">
+                            <button class="color-picker-button" onclick="document.getElementById('background-color').click()">
+                                Change
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Text</label>
+                        <div class="color-picker-container">
+                            <div class="color-preview" id="text-preview"></div>
+                            <input type="color" id="text-color" class="color-picker-input">
+                            <button class="color-picker-button" onclick="document.getElementById('text-color').click()">
+                                Change
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Lines</label>
+                        <div class="color-picker-container">
+                            <div class="color-preview" id="line-preview"></div>
+                            <input type="color" id="line-color" class="color-picker-input">
+                            <button class="color-picker-button" onclick="document.getElementById('line-color').click()">
+                                Change
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h2>KPI Values</h2>
+                
+                <div class="form-group">
+                    <label for="green-flags">Green Flags</label>
+                    <input type="number" id="green-flags" min="0" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="red-flags">Red Flags</label>
+                    <input type="number" id="red-flags" min="0" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="attendance">Attendance</label>
+                    <input type="number" id="attendance" min="0" step="1">
+                </div>
+            </div>
+        </div>
+
+        <button id="update-values">
+            Update Display
+        </button>
+
+        <div class="status-message"></div>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchKPIData();
-            document.getElementById('update-values').addEventListener('click', postKPIData);
+        // Dark Mode Functionality
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+
+        function initializeDarkMode() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) document.body.classList.add('dark-mode');
+        }
+
+        // Color Picker Updates
+        function updateColorPreviews() {
+            document.getElementById('background-preview').style.backgroundColor = 
+                document.getElementById('background-color').value;
+            document.getElementById('text-preview').style.backgroundColor = 
+                document.getElementById('text-color').value;
+            document.getElementById('line-preview').style.backgroundColor = 
+                document.getElementById('line-color').value;
+        }
+
+        // Theme Switching
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.theme-card').forEach(c => {
+                    c.classList.remove('active');
+                    c.style.backgroundColor = ''; // Reset any inline styles
+                });
+                this.classList.add('active');
+                const theme = this.dataset.theme;
+                updateThemeSettings(theme);
+            });
         });
 
-        function fetchKPIData() {
-            fetch('/api/kpi-data')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('KPI data fetched:', data);
-                    updateDisplay(data);
-                })
-                .catch(error => console.error('Error fetching KPI data:', error));
+        function updateThemeSettings(theme) {
+            console.log('Switched to theme:', theme);
         }
 
-        function updateDisplay(data) {
-            document.getElementById('green-flags').value = data.green_flags || 0;
-            document.getElementById('red-flags').value = data.red_flags || 0;
-            document.getElementById('attendance').value = data.attendance || 0;
-            document.getElementById('toggle-date-time').checked = data.showDateTime;
-            document.getElementById('country-select').value = data.country;
-            
-            // Convert RGB values from API to HEX before setting color inputs
-            document.getElementById('background-color').value = rgbToHex(data.background_color);
-            document.getElementById('text-color').value = rgbToHex(data.text_color);
-            document.getElementById('line-color').value = rgbToHex(data.line_color);
+        // Update Logic
+        async function postKPIData() {
+            const button = document.getElementById('update-values');
+            const statusMessage = document.querySelector('.status-message');
+            button.disabled = true;
+            button.textContent = 'Updating...';
+            statusMessage.style.display = 'none';
+
+            try {
+                const data = {
+                    green_flags: parseInt(document.getElementById('green-flags').value, 10),
+                    red_flags: parseInt(document.getElementById('red-flags').value, 10),
+                    attendance: parseInt(document.getElementById('attendance').value, 10),
+                    showDateTime: document.getElementById('toggle-date-time').checked,
+                    country: document.getElementById('country-select').value,
+                    background_color: hexToRgb(document.getElementById('background-color').value),
+                    text_color: hexToRgb(document.getElementById('text-color').value),
+                    line_color: hexToRgb(document.getElementById('line-color').value),
+                };
+
+                const response = await fetch('/api/update-kpis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Server error');
+                
+                statusMessage.textContent = 'Display updated successfully!';
+                statusMessage.classList.remove('error');
+                statusMessage.classList.add('success');
+            } catch (error) {
+                console.error('Error:', error);
+                statusMessage.textContent = 'Error updating display. Please try again.';
+                statusMessage.classList.remove('success');
+                statusMessage.classList.add('error');
+            } finally {
+                statusMessage.style.display = 'block';
+                button.disabled = false;
+                button.textContent = 'Update Display';
+                setTimeout(() => statusMessage.style.display = 'none', 3000);
+            }
         }
 
+        // Utility Functions
         function rgbToHex(rgb) {
             if (!rgb) return '#000000';
-            let parts = rgb.split(',').map(Number);
+            const parts = rgb.split(',').map(Number);
             return `#${parts.map(p => p.toString(16).padStart(2, '0')).join('')}`;
         }
 
         function hexToRgb(hex) {
-            let normalizedHex = hex.length === 4 
+            const normalizedHex = hex.length === 4 
                 ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` 
                 : hex;
             return [
@@ -102,71 +219,36 @@
             ].join(',');
         }
 
-        function postKPIData() {
-            const button = document.getElementById('update-values');
-            button.textContent = 'Updating...';
+        // Initialization
+        initializeDarkMode();
+        document.getElementById('update-values').addEventListener('click', postKPIData);
+        document.querySelectorAll('.color-picker-input').forEach(input => {
+            input.addEventListener('input', updateColorPreviews);
+        });
 
-            const data = {
-                green_flags: parseInt(document.getElementById('green-flags').value, 10),
-                red_flags: parseInt(document.getElementById('red-flags').value, 10),
-                attendance: parseInt(document.getElementById('attendance').value, 10),
-                showDateTime: document.getElementById('toggle-date-time').checked,
-                country: document.getElementById('country-select').value,
-                background_color: hexToRgb(document.getElementById('background-color').value),
-                text_color: hexToRgb(document.getElementById('text-color').value),
-                line_color: hexToRgb(document.getElementById('line-color').value),
-            };
-
-            fetch('/api/update-kpis', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('KPI data updated:', data);
-                button.textContent = 'Updated!';
-                setTimeout(() => button.textContent = 'Update Values and Display on Pixoo', 2000);
-            })
-            .catch(error => {
-                console.error('Error updating KPI data:', error);
-                button.textContent = 'Error!';
-                setTimeout(() => button.textContent = 'Update Values and Display on Pixoo', 2000);
-            });
+        async function fetchKPIData() {
+            try {
+                const response = await fetch('/api/kpi-data');
+                const data = await response.json();
+                updateUI(data);
+                updateColorPreviews();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
         }
+
+        function updateUI(data) {
+            document.getElementById('green-flags').value = data.green_flags || 0;
+            document.getElementById('red-flags').value = data.red_flags || 0;
+            document.getElementById('attendance').value = data.attendance || 0;
+            document.getElementById('toggle-date-time').checked = data.showDateTime;
+            document.getElementById('country-select').value = data.country;
+            document.getElementById('background-color').value = rgbToHex(data.background_color);
+            document.getElementById('text-color').value = rgbToHex(data.text_color);
+            document.getElementById('line-color').value = rgbToHex(data.line_color);
+        }
+
+        fetchKPIData();
     </script>
-</head>
-<body>
-    <header>
-        <h1>KPI Dashboard</h1>
-    </header>
-    <main>
-        <div class="option-container">
-            <label>
-                <input type="checkbox" id="toggle-date-time" />
-                Show Date & Time
-            </label>
-        </div>
-        <div class="option-container">
-            <label for="country-select">Select a Country:</label>
-            <select id="country-select">
-                <option value="Australia">Australia</option>
-                <option value="Philippines">Philippines</option>
-                <option value="United States">United States</option>
-                <option value="India">India</option>
-                <option value="Colombia">Colombia</option>
-            </select>
-        </div>
-        <div class="kpi"><h2>Green Flags</h2><input type="number" id="green-flags" /></div>
-        <div class="kpi"><h2>Red Flags</h2><input type="number" id="red-flags" /></div>
-        <div class="kpi"><h2>Attendance</h2><input type="number" id="attendance" /></div>
-        <div class="option-container">
-            <h2>Theme Settings</h2>
-            <label for="background-color">Background Color:</label><input type="color" id="background-color" />
-            <label for="text-color">Text Color:</label><input type="color" id="text-color" />
-            <label for="line-color">Line Color:</label><input type="color" id="line-color" />
-        </div>
-        <button id="update-values">Update Values and Display on Pixoo</button>
-    </main>
 </body>
 </html>

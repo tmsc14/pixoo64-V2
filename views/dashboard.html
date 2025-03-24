@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pixoo64 Dashboard</title>
     <link rel="stylesheet" href="styles/dashboard.css">
-
+    <style>
+        /* Add theme settings containers */
+        .theme-settings {
+            display: none;
+        }
+        .theme-settings.active {
+            display: block;
+        }
+        #beer-settings .color-picker-group {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    </style>
 </head>
 <body>
     <button class="theme-toggle" onclick="toggleDarkMode()">🌓</button>
@@ -16,104 +27,140 @@
             <p>Manage your display settings and themes</p>
         </header>
 
+        <!-- Theme Selector -->
         <section class="theme-selector">
-            <div class="theme-card active" data-theme="flags_attendance">
+            <div class="theme-card active" data-theme="flags" data-settings="flags-settings">
                 <img src="img/theme-thumbnails/flags-thumb.png" alt="Flags & Attendance">
                 <h3>Flags & Attendance</h3>
             </div>
-            <div class="theme-card" data-theme="beer_consumed">
+            <div class="theme-card" data-theme="beer" data-settings="beer-settings">
                 <img src="img/theme-thumbnails/beer-thumb.png" alt="Beer Consumed">
                 <h3>Beer Consumed</h3>
             </div>
         </section>
 
-        <div class="settings-container">
-            <div class="settings-card">
-                <h2>Theme Settings</h2>
-                
-                <div class="form-group">
-                    <label for="country-select">Country</label>
-                    <select id="country-select">
-                        <option value="Australia">Australia</option>
-                        <option value="Philippines">Philippines</option>
-                        <option value="United States">United States</option>
-                        <option value="India">India</option>
-                        <option value="Colombia">Colombia</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Date & Time Display</label>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-date-time">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="settings-card">
-                <h2>Color Settings</h2>
-                
-                <div class="color-picker-group">
+        <!-- Flags & Attendance Settings -->
+        <div id="flags-settings" class="theme-settings active">
+            <div class="settings-container">
+                <div class="settings-card">
+                    <h2>Theme Settings</h2>
                     <div class="form-group">
-                        <label>Background</label>
-                        <div class="color-picker-container">
-                            <div class="color-preview" id="background-preview"></div>
-                            <input type="color" id="background-color" class="color-picker-input">
-                            <button class="color-picker-button" onclick="document.getElementById('background-color').click()">
-                                Change
-                            </button>
-                        </div>
+                        <label for="country-select">Country</label>
+                        <select id="country-select">
+                            <option value="Australia">Australia</option>
+                            <option value="Philippines">Philippines</option>
+                            <option value="United States">United States</option>
+                            <option value="India">India</option>
+                            <option value="Colombia">Colombia</option>
+                        </select>
                     </div>
-                    
                     <div class="form-group">
-                        <label>Text</label>
-                        <div class="color-picker-container">
-                            <div class="color-preview" id="text-preview"></div>
-                            <input type="color" id="text-color" class="color-picker-input">
-                            <button class="color-picker-button" onclick="document.getElementById('text-color').click()">
-                                Change
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Lines</label>
-                        <div class="color-picker-container">
-                            <div class="color-preview" id="line-preview"></div>
-                            <input type="color" id="line-color" class="color-picker-input">
-                            <button class="color-picker-button" onclick="document.getElementById('line-color').click()">
-                                Change
-                            </button>
-                        </div>
+                        <label>Date & Time Display</label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-date-time">
+                            <span class="slider"></span>
+                        </label>
                     </div>
                 </div>
-            </div>
 
-            <div class="settings-card">
-                <h2>KPI Values</h2>
-                
-                <div class="form-group">
-                    <label for="green-flags">Green Flags</label>
-                    <input type="number" id="green-flags" min="0" step="1">
+                <div class="settings-card">
+                    <h2>Color Settings</h2>
+                    <div class="color-picker-group">
+                        <div class="form-group">
+                            <label>Background</label>
+                            <div class="color-picker-container">
+                                <div class="color-preview" id="background-preview"></div>
+                                <input type="color" id="background-color" class="color-picker-input">
+                                <button class="color-picker-button" onclick="document.getElementById('background-color').click()">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Text</label>
+                            <div class="color-picker-container">
+                                <div class="color-preview" id="text-preview"></div>
+                                <input type="color" id="text-color" class="color-picker-input">
+                                <button class="color-picker-button" onclick="document.getElementById('text-color').click()">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Lines</label>
+                            <div class="color-picker-container">
+                                <div class="color-preview" id="line-preview"></div>
+                                <input type="color" id="line-color" class="color-picker-input">
+                                <button class="color-picker-button" onclick="document.getElementById('line-color').click()">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="red-flags">Red Flags</label>
-                    <input type="number" id="red-flags" min="0" step="1">
-                </div>
-                
-                <div class="form-group">
-                    <label for="attendance">Attendance</label>
-                    <input type="number" id="attendance" min="0" step="1">
+
+                <div class="settings-card">
+                    <h2>KPI Values</h2>
+                    <div class="form-group">
+                        <label for="green-flags">Green Flags</label>
+                        <input type="number" id="green-flags" min="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="red-flags">Red Flags</label>
+                        <input type="number" id="red-flags" min="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="attendance">Attendance</label>
+                        <input type="number" id="attendance" min="0" step="1">
+                    </div>
                 </div>
             </div>
         </div>
 
-        <button id="update-values">
-            Update Display
-        </button>
+        <!-- Beer Consumed Settings -->
+        <div id="beer-settings" class="theme-settings">
+            <div class="settings-container">
+                <div class="settings-card">
+                    <h2>Beer Consumption</h2>
+                    <div class="form-group">
+                        <label for="beers-week">Beers This Week</label>
+                        <input type="number" id="beers-week" min="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="beers-month">Beers This Month</label>
+                        <input type="number" id="beers-month" min="0" step="1">
+                    </div>
+                </div>
 
+                <div class="settings-card">
+                    <h2>Display Settings</h2>
+                    <div class="color-picker-group">
+                        <div class="form-group">
+                            <label>Background</label>
+                            <div class="color-picker-container">
+                                <div class="color-preview" id="beer-bg-preview"></div>
+                                <input type="color" id="beer-bg-color" class="color-picker-input">
+                                <button class="color-picker-button" onclick="document.getElementById('beer-bg-color').click()">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Text</label>
+                            <div class="color-picker-container">
+                                <div class="color-preview" id="beer-text-preview"></div>
+                                <input type="color" id="beer-text-color" class="color-picker-input">
+                                <button class="color-picker-button" onclick="document.getElementById('beer-text-color').click()">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="update-values">Update Display</button>
         <div class="status-message"></div>
     </div>
 
@@ -130,52 +177,48 @@
             if (darkMode) document.body.classList.add('dark-mode');
         }
 
-        // Color Picker Updates
-        function updateColorPreviews() {
-            document.getElementById('background-preview').style.backgroundColor = 
-                document.getElementById('background-color').value;
-            document.getElementById('text-preview').style.backgroundColor = 
-                document.getElementById('text-color').value;
-            document.getElementById('line-preview').style.backgroundColor = 
-                document.getElementById('line-color').value;
-        }
-
         // Theme Switching
         document.querySelectorAll('.theme-card').forEach(card => {
             card.addEventListener('click', function() {
-                document.querySelectorAll('.theme-card').forEach(c => {
-                    c.classList.remove('active');
-                    c.style.backgroundColor = ''; // Reset any inline styles
+                document.querySelectorAll('.theme-card, .theme-settings').forEach(el => {
+                    el.classList.remove('active');
                 });
                 this.classList.add('active');
-                const theme = this.dataset.theme;
-                updateThemeSettings(theme);
+                document.getElementById(this.dataset.settings).classList.add('active');
             });
         });
 
-        function updateThemeSettings(theme) {
-            console.log('Switched to theme:', theme);
-        }
-
         // Update Logic
         async function postKPIData() {
+            const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
             const button = document.getElementById('update-values');
             const statusMessage = document.querySelector('.status-message');
-            button.disabled = true;
-            button.textContent = 'Updating...';
-            statusMessage.style.display = 'none';
+            
+            const data = {
+                background_color: hexToRgb(document.getElementById(
+                    activeTheme === 'flags' ? 'background-color' : 'beer-bg-color'
+                ).value),
+                text_color: hexToRgb(document.getElementById(
+                    activeTheme === 'flags' ? 'text-color' : 'beer-text-color'
+                ).value)
+            };
+
+            if (activeTheme === 'flags') {
+                data.green_flags = parseInt(document.getElementById('green-flags').value);
+                data.red_flags = parseInt(document.getElementById('red-flags').value);
+                data.attendance = parseInt(document.getElementById('attendance').value);
+                data.showDateTime = document.getElementById('toggle-date-time').checked;
+                data.country = document.getElementById('country-select').value;
+                data.line_color = hexToRgb(document.getElementById('line-color').value);
+            } else {
+                data.beers_week = parseInt(document.getElementById('beers-week').value);
+                data.beers_month = parseInt(document.getElementById('beers-month').value);
+            }
 
             try {
-                const data = {
-                    green_flags: parseInt(document.getElementById('green-flags').value, 10),
-                    red_flags: parseInt(document.getElementById('red-flags').value, 10),
-                    attendance: parseInt(document.getElementById('attendance').value, 10),
-                    showDateTime: document.getElementById('toggle-date-time').checked,
-                    country: document.getElementById('country-select').value,
-                    background_color: hexToRgb(document.getElementById('background-color').value),
-                    text_color: hexToRgb(document.getElementById('text-color').value),
-                    line_color: hexToRgb(document.getElementById('line-color').value),
-                };
+                button.disabled = true;
+                button.textContent = 'Updating...';
+                statusMessage.style.display = 'none';
 
                 const response = await fetch('/api/update-kpis', {
                     method: 'POST',
@@ -186,13 +229,11 @@
                 if (!response.ok) throw new Error('Server error');
                 
                 statusMessage.textContent = 'Display updated successfully!';
-                statusMessage.classList.remove('error');
-                statusMessage.classList.add('success');
+                statusMessage.className = 'status-message success';
             } catch (error) {
                 console.error('Error:', error);
                 statusMessage.textContent = 'Error updating display. Please try again.';
-                statusMessage.classList.remove('success');
-                statusMessage.classList.add('error');
+                statusMessage.className = 'status-message error';
             } finally {
                 statusMessage.style.display = 'block';
                 button.disabled = false;
@@ -219,25 +260,9 @@
             ].join(',');
         }
 
-        // Initialization
-        initializeDarkMode();
-        document.getElementById('update-values').addEventListener('click', postKPIData);
-        document.querySelectorAll('.color-picker-input').forEach(input => {
-            input.addEventListener('input', updateColorPreviews);
-        });
-
-        async function fetchKPIData() {
-            try {
-                const response = await fetch('/api/kpi-data');
-                const data = await response.json();
-                updateUI(data);
-                updateColorPreviews();
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        }
-
+        // Initialize UI
         function updateUI(data) {
+            // Flags Theme
             document.getElementById('green-flags').value = data.green_flags || 0;
             document.getElementById('red-flags').value = data.red_flags || 0;
             document.getElementById('attendance').value = data.attendance || 0;
@@ -246,8 +271,50 @@
             document.getElementById('background-color').value = rgbToHex(data.background_color);
             document.getElementById('text-color').value = rgbToHex(data.text_color);
             document.getElementById('line-color').value = rgbToHex(data.line_color);
+        
+            // Beer Theme
+            document.getElementById('beers-week').value = data.beers_week || 0;
+            document.getElementById('beers-month').value = data.beers_month || 0;
+            document.getElementById('beer-bg-color').value = rgbToHex(data.beer_bg_color || '#000000');
+            document.getElementById('beer-text-color').value = rgbToHex(data.beer_text_color || '#ffffff');
+        
+            // Ensure color previews are updated
+            initializeColorPreviews();
+        }        
+
+        // Initialize Color Previews
+        function initializeColorPreviews() {
+            document.querySelectorAll('.color-picker-input').forEach(input => {
+                const previewId = input.id.replace('-color', '-preview'); // Map input to preview
+                const previewBox = document.getElementById(previewId);
+        
+                if (previewBox) {
+                    // Set initial color preview
+                    previewBox.style.backgroundColor = input.value;
+        
+                    // Update preview on input change
+                    input.addEventListener('input', () => {
+                        previewBox.style.backgroundColor = input.value;
+                    });
+                }
+            });
         }
 
+        // Fetch Data
+        async function fetchKPIData() {
+            try {
+                const response = await fetch('/api/kpi-data');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Initialization
+        initializeDarkMode();
+        document.getElementById('update-values').addEventListener('click', postKPIData);
+        initializeColorPreviews();
         fetchKPIData();
     </script>
 </body>

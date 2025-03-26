@@ -27,7 +27,7 @@ class BaseTheme(ABC):
     def animate_frame(self, data, frame_index, static_bg):
         pass
 
-    def load_frames(self, folder, prefix, num_frames):
+    def load_frames(self, folder, prefix, num_frames, resize=(10,10)):
         frames = []
         for i in range(1, num_frames + 1):
             frame_path = os.path.join("views/img", folder, f"{prefix}-frame{i}.png")
@@ -35,7 +35,9 @@ class BaseTheme(ABC):
                 with Image.open(frame_path) as img:
                     if img.mode != "RGBA":
                         img = img.convert("RGBA")
-                    frames.append(img.resize((10, 10), Image.LANCZOS))
+                    if resize:  # Only resize if resize parameter is provided
+                        img = img.resize(resize, Image.LANCZOS)
+                    frames.append(img)
             except FileNotFoundError:
                 print(f"Frame not found: {frame_path}")
         return frames

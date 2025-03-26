@@ -7,6 +7,7 @@ class Config:
     PIXOO_DEBUG = parse_bool_value(os.getenv("PIXOO_DEBUG", "false"))
     ANIMATION_FRAME_DELAY = float(os.getenv("ANIMATION_FRAME_DELAY", 0.5))
     CSV_FILE_PATH = "dataset/data.csv"
+    CSV_BEER_FILE_PATH = "dataset/beer_data.csv"
     COUNTRY_TIMEZONES = {
         "Australia": "Australia/Sydney",
         "Philippines": "Asia/Manila",

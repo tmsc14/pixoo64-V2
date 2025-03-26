@@ -39,3 +39,37 @@ class DataService:
             "text_color": "255,255,255",
             "line_color": "255,255,255",
         }
+
+
+class BeerDataService:
+    CSV_FIELDS = ["beers_week", "beers_month", "beers_total", "background_color", "text_color"]
+
+    @classmethod
+    def read_data(cls):
+        try:
+            with open(Config.CSV_BEER_FILE_PATH, "r") as file:
+                return next(csv.DictReader(file), cls.default_data())
+        except Exception as e:
+            print(f"Error reading beer data: {e}")
+            return cls.default_data()
+
+    @classmethod
+    def write_data(cls, data):
+        filtered = {k: data.get(k, 0) for k in cls.CSV_FIELDS}
+        try:
+            with open(Config.CSV_BEER_FILE_PATH, "w", newline="") as file:
+                writer = csv.DictWriter(file, fieldnames=cls.CSV_FIELDS)
+                writer.writeheader()
+                writer.writerow(filtered)
+        except Exception as e:
+            print(f"Error writing beer data: {e}")
+
+    @staticmethod
+    def default_data():
+        return {
+            "beers_week": 0,
+            "beers_month": 0,
+            "beers_total": 0,
+            "background_color": "0,0,0",
+            "text_color": "255,255,255",
+        }

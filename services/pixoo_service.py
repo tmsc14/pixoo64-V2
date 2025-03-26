@@ -34,5 +34,6 @@ class PixooService:
         try:
             self.pixoo.draw_image(image.convert("RGB"))
             self.pixoo.push()
+            print("Image sent to device")
         except Exception as e:
             print(f"Error updating Pixoo display: {e}")

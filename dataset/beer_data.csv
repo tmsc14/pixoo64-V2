@@ -1,2 +1,2 @@
-beers_week,beers_month,beers_total,background_color,text_color
-1231,123,0,"0,0,0","255,255,255"
+location,beers_total_available,beers_consumed,beers_week,beers_month,background_color,text_color
+CRK55,1000,1,213,21,"164,70,70","255,255,255"

@@ -40,9 +40,12 @@ class DataService:
             "line_color": "255,255,255",
         }
 
-
 class BeerDataService:
-    CSV_FIELDS = ["beers_week", "beers_month", "beers_total", "background_color", "text_color"]
+    CSV_FIELDS = [
+        "location", "beers_total_available", "beers_consumed",
+        "beers_week", "beers_month", "background_color", "text_color"
+    ]
+
     @classmethod
     def read_data(cls):
         try:
@@ -51,6 +54,7 @@ class BeerDataService:
         except Exception as e:
             print(f"Error reading beer data: {e}")
             return cls.default_data()
+
     @classmethod
     def write_data(cls, data):
         filtered = {k: data.get(k, 0) for k in cls.CSV_FIELDS}
@@ -61,12 +65,15 @@ class BeerDataService:
                 writer.writerow(filtered)
         except Exception as e:
             print(f"Error writing beer data: {e}")
+
     @staticmethod
     def default_data():
         return {
+            "location": "Unknown",
+            "beers_total_available": 1000,
+            "beers_consumed": 0,
             "beers_week": 0,
             "beers_month": 0,
-            "beers_total": 0,
             "background_color": "0,0,0",
             "text_color": "255,255,255",
         }

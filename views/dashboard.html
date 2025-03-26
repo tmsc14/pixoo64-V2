@@ -6,16 +6,9 @@
     <title>Pixoo64 Dashboard</title>
     <link rel="stylesheet" href="styles/dashboard.css">
     <style>
-        /* Add theme settings containers */
-        .theme-settings {
-            display: none;
-        }
-        .theme-settings.active {
-            display: block;
-        }
-        #beer-settings .color-picker-group {
-            grid-template-columns: repeat(2, 1fr);
-        }
+        .theme-settings { display: none; }
+        .theme-settings.active { display: block; }
+        #beer-settings .color-picker-group { grid-template-columns: repeat(2, 1fr); }
     </style>
 </head>
 <body>
@@ -27,7 +20,6 @@
             <p>Manage your display settings and themes</p>
         </header>
 
-        <!-- Theme Selector -->
         <section class="theme-selector">
             <div class="theme-card active" data-theme="flags" data-settings="flags-settings">
                 <img src="img/theme-thumbnails/flags-thumb.png" alt="Flags & Attendance">
@@ -39,7 +31,7 @@
             </div>
         </section>
 
-        <!-- Flags & Attendance Settings -->
+        <!-- Flags & Attendance Settings (unchanged) -->
         <div id="flags-settings" class="theme-settings active">
             <div class="settings-container">
                 <div class="settings-card">
@@ -123,6 +115,18 @@
                 <div class="settings-card">
                     <h2>Beer Consumption</h2>
                     <div class="form-group">
+                        <label for="beer-location">Location</label>
+                        <input type="text" id="beer-location" placeholder="e.g., CRK99">
+                    </div>
+                    <div class="form-group">
+                        <label for="beers-total-available">Total Beers Available</label>
+                        <input type="number" id="beers-total-available" min="1" step="1" value="1000">
+                    </div>
+                    <div class="form-group">
+                        <label for="beers-consumed">Beers Consumed</label>
+                        <input type="number" id="beers-consumed" min="0" step="1">
+                    </div>
+                    <div class="form-group">
                         <label for="beers-week">Beers This Week</label>
                         <input type="number" id="beers-week" min="0" step="1">
                     </div>
@@ -165,7 +169,6 @@
     </div>
 
     <script>
-        // Dark Mode Functionality
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
@@ -175,17 +178,15 @@
             if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
         }
 
-        // Theme Switching
         document.querySelectorAll('.theme-card').forEach(card => {
             card.addEventListener('click', function() {
                 document.querySelectorAll('.theme-card, .theme-settings').forEach(el => el.classList.remove('active'));
                 this.classList.add('active');
                 document.getElementById(this.dataset.settings).classList.add('active');
-                fetchKPIData();  // Load new theme's data when switching
+                fetchKPIData();
             });
         });
 
-        // Update Logic
         async function postKPIData() {
             const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
             const button = document.getElementById('update-values');
@@ -209,6 +210,9 @@
                 data.country = document.getElementById('country-select').value;
                 data.line_color = hexToRgb(document.getElementById('line-color').value);
             } else {
+                data.location = document.getElementById('beer-location').value;
+                data.beers_total_available = parseInt(document.getElementById('beers-total-available').value);
+                data.beers_consumed = parseInt(document.getElementById('beers-consumed').value);
                 data.beers_week = parseInt(document.getElementById('beers-week').value);
                 data.beers_month = parseInt(document.getElementById('beers-month').value);
             }
@@ -239,7 +243,6 @@
             }
         }
 
-        // Color Conversion Utilities
         function rgbToHex(rgb) {
             if (!rgb) return '#000000';
             const parts = rgb.split(',').map(Number);
@@ -256,7 +259,6 @@
             ].join(',');
         }
 
-        // UI Initialization
         function updateUI(data) {
             const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
             
@@ -270,6 +272,9 @@
                 document.getElementById('text-color').value = rgbToHex(data.text_color);
                 document.getElementById('line-color').value = rgbToHex(data.line_color);
             } else {
+                document.getElementById('beer-location').value = data.location || 'Unknown';
+                document.getElementById('beers-total-available').value = data.beers_total_available || 1000;
+                document.getElementById('beers-consumed').value = data.beers_consumed || 0;
                 document.getElementById('beers-week').value = data.beers_week || 0;
                 document.getElementById('beers-month').value = data.beers_month || 0;
                 document.getElementById('beer-bg-color').value = rgbToHex(data.background_color || '#000000');
@@ -300,7 +305,6 @@
             }
         }
 
-        // Initial Setup
         initializeDarkMode();
         document.getElementById('update-values').addEventListener('click', postKPIData);
         initializeColorPreviews();

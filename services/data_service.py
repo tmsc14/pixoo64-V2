@@ -43,7 +43,6 @@ class DataService:
 
 class BeerDataService:
     CSV_FIELDS = ["beers_week", "beers_month", "beers_total", "background_color", "text_color"]
-
     @classmethod
     def read_data(cls):
         try:
@@ -52,7 +51,6 @@ class BeerDataService:
         except Exception as e:
             print(f"Error reading beer data: {e}")
             return cls.default_data()
-
     @classmethod
     def write_data(cls, data):
         filtered = {k: data.get(k, 0) for k in cls.CSV_FIELDS}
@@ -63,7 +61,6 @@ class BeerDataService:
                 writer.writerow(filtered)
         except Exception as e:
             print(f"Error writing beer data: {e}")
-
     @staticmethod
     def default_data():
         return {

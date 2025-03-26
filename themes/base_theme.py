@@ -33,9 +33,10 @@ class BaseTheme(ABC):
             frame_path = os.path.join("views/img", folder, f"{prefix}-frame{i}.png")
             try:
                 with Image.open(frame_path) as img:
+                    img = img.copy()  # Ensure image is fully loaded
                     if img.mode != "RGBA":
                         img = img.convert("RGBA")
-                    if resize:  # Only resize if resize parameter is provided
+                    if resize:
                         img = img.resize(resize, Image.LANCZOS)
                     frames.append(img)
             except FileNotFoundError:

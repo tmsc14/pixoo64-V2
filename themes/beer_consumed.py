@@ -21,7 +21,7 @@ class BeerConsumedTheme(BaseTheme):
             percentage = (consumed / total) * 100 if total > 0 else 0
             frame_index = self._get_frame_index(percentage)
             if frame_index < len(beer_frames):
-                img.paste(beer_frames[frame_index], (0, 0), beer_frames[frame_index])
+                img.paste(beer_frames[frame_index], (0, 2), beer_frames[frame_index]) #MOVE ICON LOCATION
             else:
                 print(f"Warning: No frame available for index {frame_index}")
         else:
@@ -50,12 +50,11 @@ class BeerConsumedTheme(BaseTheme):
         week = self.format_kpi(data.get("beers_week", 0))
         month = self.format_kpi(data.get("beers_month", 0))
 
-        # Draw stats at distinct positions (7x7 text, 2px gap)
-        draw.text((2, 20), f"Loc:{location}", fill=text_color, font=self.font)    # y=2
-        draw.text((2, 29), f"T:{total}", fill=text_color, font=self.font)       # y=12
-        draw.text((2, 38), f"C:{consumed}", fill=text_color, font=self.font)    # y=22
-        draw.text((2, 47), f"W:{week}", fill=text_color, font=self.font)        # y=32
-        draw.text((2, 56), f"M:{month}", fill=text_color, font=self.font)       # y=42
+        draw.text((2, 20), f"L:{location}", fill=text_color, font=self.font)
+        draw.text((2, 29), f"T:{total}", fill=text_color, font=self.font)
+        draw.text((2, 38), f"C:{consumed}", fill=text_color, font=self.font)
+        draw.text((2, 47), f"W:{week}", fill=text_color, font=self.font)
+        draw.text((2, 56), f"M:{month}", fill=text_color, font=self.font)  
 
     def animate_frame(self, data, frame_index, static_bg):
         return static_bg

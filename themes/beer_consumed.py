@@ -47,14 +47,10 @@ class BeerConsumedTheme(BaseTheme):
         location = data.get("location", "Unknown")
         total = self.format_kpi(data.get("beers_total_available", 1000))
         consumed = self.format_kpi(data.get("beers_consumed", 0))
-        week = self.format_kpi(data.get("beers_week", 0))
-        month = self.format_kpi(data.get("beers_month", 0))
 
         draw.text((2, 20), f"L:{location}", fill=text_color, font=self.font)
         draw.text((2, 29), f"T:{total}", fill=text_color, font=self.font)
         draw.text((2, 38), f"C:{consumed}", fill=text_color, font=self.font)
-        draw.text((2, 47), f"W:{week}", fill=text_color, font=self.font)
-        draw.text((2, 56), f"M:{month}", fill=text_color, font=self.font)  
 
     def animate_frame(self, data, frame_index, static_bg):
         return static_bg

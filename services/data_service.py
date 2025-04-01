@@ -43,7 +43,7 @@ class DataService:
 class BeerDataService:
     CSV_FIELDS = [
         "location", "beers_total_available", "beers_consumed",
-        "beers_week", "beers_month", "background_color", "text_color"
+        "background_color", "text_color"
     ]
 
     @classmethod
@@ -72,8 +72,6 @@ class BeerDataService:
             "location": "Unknown",
             "beers_total_available": 1000,
             "beers_consumed": 0,
-            "beers_week": 0,
-            "beers_month": 0,
             "background_color": "0,0,0",
             "text_color": "255,255,255",
         }

@@ -31,11 +31,11 @@
             </div>
         </section>
 
-        <!-- Flags & Attendance Settings (unchanged) -->
+        <!-- Flags & Attendance Settings -->
         <div id="flags-settings" class="theme-settings active">
             <div class="settings-container">
                 <div class="settings-card">
-                    <h2>Theme Settings</h2>
+                    <h2>Date & Time Settings</h2>
                     <div class="form-group">
                         <label for="country-select">Country</label>
                         <select id="country-select">
@@ -126,14 +126,6 @@
                         <label for="beers-consumed">Beers Consumed</label>
                         <input type="number" id="beers-consumed" min="0" step="1">
                     </div>
-                    <div class="form-group">
-                        <label for="beers-week">Beers This Week</label>
-                        <input type="number" id="beers-week" min="0" step="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="beers-month">Beers This Month</label>
-                        <input type="number" id="beers-month" min="0" step="1">
-                    </div>
                 </div>
 
                 <div class="settings-card">
@@ -213,8 +205,6 @@
                 data.location = document.getElementById('beer-location').value;
                 data.beers_total_available = parseInt(document.getElementById('beers-total-available').value);
                 data.beers_consumed = parseInt(document.getElementById('beers-consumed').value);
-                data.beers_week = parseInt(document.getElementById('beers-week').value);
-                data.beers_month = parseInt(document.getElementById('beers-month').value);
             }
 
             try {
@@ -275,8 +265,6 @@
                 document.getElementById('beer-location').value = data.location || 'Unknown';
                 document.getElementById('beers-total-available').value = data.beers_total_available || 1000;
                 document.getElementById('beers-consumed').value = data.beers_consumed || 0;
-                document.getElementById('beers-week').value = data.beers_week || 0;
-                document.getElementById('beers-month').value = data.beers_month || 0;
                 document.getElementById('beer-bg-color').value = rgbToHex(data.background_color || '#000000');
                 document.getElementById('beer-text-color').value = rgbToHex(data.text_color || '#ffffff');
             }

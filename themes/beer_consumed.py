@@ -62,7 +62,7 @@ class BeerConsumedTheme(BaseTheme):
         try:
             beer_opener = Image.open(beer_opener_path).convert("RGBA")
             beer_opener = beer_opener.resize((19, 10), Image.Resampling.LANCZOS) 
-            icon_x = 1 
+            icon_x = 2 
             icon_y = 42 
 
             img.paste(beer_opener, (icon_x, icon_y), beer_opener)
@@ -78,7 +78,7 @@ class BeerConsumedTheme(BaseTheme):
         try:
             empty_bottle = Image.open(empty_bottle_path).convert("RGBA")
             empty_bottle = empty_bottle.resize((20, 9), Image.Resampling.LANCZOS) 
-            bottle_x = 1 
+            bottle_x = 2 
             bottle_y = 53 
 
             img.paste(empty_bottle, (bottle_x, bottle_y), empty_bottle) 

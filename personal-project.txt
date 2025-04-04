@@ -1,0 +1,7 @@
+mystaff integration with divoom
+
+current idea:
+transform the output of message to the csv - display it to the divoom
+
+other idea:
+- link multiple divoom pixel boards in one theme.

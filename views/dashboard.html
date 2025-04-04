@@ -129,6 +129,27 @@
                 </div>
 
                 <div class="settings-card">
+                    <h2>Date & Time Settings</h2>
+                    <div class="form-group">
+                        <label for="country-select-beer">Country/Timezone</label>
+                        <select id="country-select-beer">
+                            <option value="Australia">Australia</option>
+                            <option value="Philippines">Philippines</option>
+                            <option value="United States">United States</option>
+                            <option value="India">India</option>
+                            <option value="Colombia">Colombia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date & Time Display</label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-date-time-beer">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card">
                     <h2>Display Settings</h2>
                     <div class="color-picker-group">
                         <div class="form-group">
@@ -159,17 +180,16 @@
         <button id="update-values">Update Display</button>
         <div class="status-message"></div>
     </div>
-
     <script>
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
         }
-
+    
         function initializeDarkMode() {
             if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
         }
-
+    
         document.querySelectorAll('.theme-card').forEach(card => {
             card.addEventListener('click', function() {
                 document.querySelectorAll('.theme-card, .theme-settings').forEach(el => el.classList.remove('active'));
@@ -178,12 +198,12 @@
                 fetchKPIData();
             });
         });
-
+    
         async function postKPIData() {
             const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
             const button = document.getElementById('update-values');
             const statusMessage = document.querySelector('.status-message');
-            
+    
             const data = {
                 theme: activeTheme,
                 background_color: hexToRgb(document.getElementById(
@@ -193,31 +213,33 @@
                     activeTheme === 'flags' ? 'text-color' : 'beer-text-color'
                 ).value)
             };
-
+    
             if (activeTheme === 'flags') {
                 data.green_flags = parseInt(document.getElementById('green-flags').value);
                 data.red_flags = parseInt(document.getElementById('red-flags').value);
                 data.attendance = parseInt(document.getElementById('attendance').value);
                 data.showDateTime = document.getElementById('toggle-date-time').checked;
                 data.country = document.getElementById('country-select').value;
-                data.line_color = hexToRgb(document.getElementById('line-color').value);
+                data.line_color = rgbToHex(document.getElementById('line-color').value);
             } else {
                 data.location = document.getElementById('beer-location').value;
                 data.beers_total_available = parseInt(document.getElementById('beers-total-available').value);
                 data.beers_consumed = parseInt(document.getElementById('beers-consumed').value);
+                data.country = document.getElementById('country-select-beer').value;
+                data.showDateTime = document.getElementById('toggle-date-time-beer').checked;
             }
-
+    
             try {
                 button.disabled = true;
                 button.textContent = 'Updating...';
                 statusMessage.style.display = 'none';
-
+    
                 const response = await fetch('/api/update-kpis', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-
+    
                 if (!response.ok) throw new Error('Server error');
                 statusMessage.textContent = 'Display updated successfully!';
                 statusMessage.className = 'status-message success';
@@ -232,13 +254,13 @@
                 setTimeout(() => statusMessage.style.display = 'none', 3000);
             }
         }
-
+    
         function rgbToHex(rgb) {
             if (!rgb) return '#000000';
             const parts = rgb.split(',').map(Number);
             return `#${parts.map(p => p.toString(16).padStart(2, '0')).join('')}`;
         }
-
+    
         function hexToRgb(hex) {
             const normalizedHex = hex.length === 4 ? 
                 `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex;
@@ -248,7 +270,7 @@
                 parseInt(normalizedHex.substring(5, 7), 16),
             ].join(',');
         }
-
+    
         function updateUI(data) {
             const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
             
@@ -265,12 +287,14 @@
                 document.getElementById('beer-location').value = data.location || 'Unknown';
                 document.getElementById('beers-total-available').value = data.beers_total_available || 1000;
                 document.getElementById('beers-consumed').value = data.beers_consumed || 0;
+                document.getElementById('country-select-beer').value = data.country || 'Philippines'; // Use data as default
+                document.getElementById('toggle-date-time-beer').checked = data.showDateTime || false; // Reflect CSV
                 document.getElementById('beer-bg-color').value = rgbToHex(data.background_color || '#000000');
                 document.getElementById('beer-text-color').value = rgbToHex(data.text_color || '#ffffff');
             }
             initializeColorPreviews();
         }
-
+    
         function initializeColorPreviews() {
             document.querySelectorAll('.color-picker-input').forEach(input => {
                 const previewId = input.id.replace('-color', '-preview');
@@ -281,7 +305,7 @@
                 }
             });
         }
-
+    
         async function fetchKPIData() {
             try {
                 const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
@@ -292,11 +316,11 @@
                 console.error('Error fetching data:', error);
             }
         }
-
+    
         initializeDarkMode();
         document.getElementById('update-values').addEventListener('click', postKPIData);
         initializeColorPreviews();
         fetchKPIData();
-    </script>    
+    </script>        
 </body>
 </html>

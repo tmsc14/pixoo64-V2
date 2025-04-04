@@ -8,7 +8,7 @@ from views.fonts.pixel_font import draw_pixel_text
 class BeerConsumedTheme(BaseTheme):
     def get_name(self):
         return "beer_consumed"
-    
+
     def render_static(self, data):
         bg_color = self.parse_color(data.get('background_color', '0,0,0'))
         text_color = self.parse_color(data.get('text_color', '255,255,255'))
@@ -16,12 +16,10 @@ class BeerConsumedTheme(BaseTheme):
         img = Image.new("RGBA", (Config.PIXOO_SCREEN_SIZE, Config.PIXOO_SCREEN_SIZE), bg_color)
         draw = ImageDraw.Draw(img)
 
-        # Timezone related
-        country = data.get("country", "Philippines")  # Default to Philippines if missing
-        tz_name = Config.COUNTRY_TIMEZONES.get(country, "Asia/Manila")
-        tz = pytz.timezone(tz_name)
-        current_time = datetime.now(tz)
-        is_friday = current_time.weekday() == 4
+        # PH timezone
+        ph_tz = pytz.timezone('Asia/Manila')
+        current_time = datetime.now(ph_tz)
+        is_friday = current_time.weekday() == 4  # 0=Monday, 4=Friday
 
         # Load beer frames
         beer_frames = self.load_frames("beer-frames", "bc", 5, resize=None)
@@ -40,17 +38,19 @@ class BeerConsumedTheme(BaseTheme):
             beer_y = 11
             if is_friday:
                 beer_x = 34
+                # Draw "BEER FRIDAY"
                 draw_pixel_text(draw, 7, 18, "BEER", text_color)
                 draw_pixel_text(draw, 4, 25, "FRIDAY", text_color)
             else:
-                beer_x = (Config.PIXOO_SCREEN_SIZE - 23) // 2 
-  
+                beer_x = (Config.PIXOO_SCREEN_SIZE - 23) // 2  # Center on the top
+
             if frame_index < len(resized_frames):
                 img.paste(resized_frames[frame_index], (beer_x, beer_y), resized_frames[frame_index])
 
+        # Draw stats and location
         self._draw_stats(img, draw, data, text_color)
         return img
-    
+
     def _get_frame_index(self, percentage):
         if percentage >= 100:
             return 0
@@ -64,23 +64,11 @@ class BeerConsumedTheme(BaseTheme):
             return 4
 
     def _draw_stats(self, img, draw, data, text_color):
-        # Fetch and handle data
         location = data.get("location", "Unknown")
         total = self.format_kpi(data.get('beers_total_available', 1000))
         consumed = self.format_kpi(data.get('beers_consumed', 0))
 
-        # Country code mappings
-        country_code_map = {
-            "Australia": "AU",
-            "Philippines": "PH",
-            "United States": "US",
-            "India": "IN",
-            "Colombia": "CO"
-        }
-        country_code = country_code_map.get(data.get("country", "Philippines"), "PH")
-        
         try:
-            # Icons
             beer_opener = Image.open("views/img/beer-frames/icons/beer-opener.png") \
                 .convert("RGBA") \
                 .resize((19, 10), Image.Resampling.LANCZOS)
@@ -98,18 +86,16 @@ class BeerConsumedTheme(BaseTheme):
             draw.text((1, 47), f"{total}", fill=text_color, font=self.font)
             draw.text((1, 57), f"{consumed}", fill=text_color, font=self.font)
 
-        # Draw location normally with a larger font
-        draw.text((2, 2), location, fill=text_color, font=self.font)
-        
-        # Use draw_pixel_text for country code next to the location
-        draw_pixel_text(draw, 48, 3, f"({country_code})", text_color)
-    
+        draw.text((2, 2), f"{location}", fill=text_color, font=self.font)
+
     def animate_frame(self, data, frame_index, static_bg):
         animated = static_bg.copy()
         draw = ImageDraw.Draw(animated)
         
+        # Define a selection of colors representing different beer tones
         beer_colors = [(255, 223, 186), (255, 193, 102), (255, 166, 77), (204, 140, 57), (179, 107, 0)]
         
+        # Total rotating pixel positions
         perimeter = 256
         wave_length = len(beer_colors)
         wave_speed = 1
@@ -118,33 +104,35 @@ class BeerConsumedTheme(BaseTheme):
             color_index = (i + frame_index * wave_speed) % wave_length
             color = beer_colors[color_index]
 
-            if i < 64:
+            if i < 64:  # Top edge (left to right)
                 x, y = i, 0
-            elif i < 128:
+            elif i < 128:  # Right edge (top to bottom)
                 x, y = 63, i - 64
-            elif i < 192:
+            elif i < 192:  # Bottom edge (right to left)
                 x, y = 191 - i, 63
-            else:
+            else:  # Left edge (bottom to top)
                 x, y = 0, 255 - i
 
             draw.point((x, y), fill=color)
 
-        if data.get('showDateTime'):
-            self._draw_time(draw, data)
-
+        # Draw real-time updating time
+        self._draw_time(draw, data)
         return animated
 
     def _draw_time(self, draw, data):
-        country = data.get("country", "Philippines")
-        tz_name = Config.COUNTRY_TIMEZONES.get(country, "Asia/Manila")
+        # Ensure 'country' key exists, or fall back if missing
+        country = data.get("country", "Australia")  # Default to 'Australia' if missing
+        tz_name = Config.COUNTRY_TIMEZONES.get(country, "Australia/Sydney")
         
         try:
             tz = pytz.timezone(tz_name)
             now = datetime.now(tz)
             time_str = now.strftime("%H:%M")
+
             text_color = self.parse_color(data.get('text_color', '255,255,255'))
 
-            draw_pixel_text(draw, 6, 32, time_str, text_color)  # New position for time
+            # Draw the time for dynamic display update
+            draw_pixel_text(draw, 6, 32, time_str, text_color)
 
         except Exception as e:
             print(f"Error in drawing time: {e}")

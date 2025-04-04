@@ -42,15 +42,27 @@ class DataService:
 
 class BeerDataService:
     CSV_FIELDS = [
-        "location", "beers_total_available", "beers_consumed",
-        "background_color", "text_color"
+        "location", 
+        "beers_total_available", 
+        "beers_consumed", 
+        "background_color", 
+        "text_color", 
+        "showDateTime",  # New field
+        "country"  # New field
     ]
 
     @classmethod
     def read_data(cls):
         try:
             with open(Config.CSV_BEER_FILE_PATH, "r") as file:
-                return next(csv.DictReader(file), cls.default_data())
+                csv_reader = csv.DictReader(file)
+                data = next(csv_reader, cls.default_data())
+                
+                # Ensure proper types
+                data['beers_total_available'] = int(data.get('beers_total_available', 1000))
+                data['beers_consumed'] = int(data.get('beers_consumed', 0))
+                data['showDateTime'] = data.get('showDateTime', 'false').lower() == 'true'
+                return data
         except Exception as e:
             print(f"Error reading beer data: {e}")
             return cls.default_data()
@@ -74,4 +86,6 @@ class BeerDataService:
             "beers_consumed": 0,
             "background_color": "0,0,0",
             "text_color": "255,255,255",
+            "showDateTime": False,
+            "country": "Philippines"
         }

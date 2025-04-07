@@ -17,15 +17,14 @@ class BeerConsumedTheme(BaseTheme):
         draw = ImageDraw.Draw(img)
 
         # Timezone related
-        country = data.get("country", "Philippines")  # Default to Philippines if missing
+        country = data.get("country", "Philippines") 
         tz_name = Config.COUNTRY_TIMEZONES.get(country, "Asia/Manila")
         tz = pytz.timezone(tz_name)
         current_time = datetime.now(tz)
         is_friday = current_time.weekday() == 4
 
-        # Load beer frames
-        beer_frames = self.load_frames("beer-frames", "bc", 5, resize=None)
-        
+        # Load and draw beer frames
+        beer_frames = self.load_frames("beer-frames", "bc", 5, resize=None)        
         if beer_frames:
             resized_frames = []
             for frame in beer_frames:
@@ -42,13 +41,19 @@ class BeerConsumedTheme(BaseTheme):
                 beer_x = 34
                 draw_pixel_text(draw, 7, 18, "BEER", text_color)
                 draw_pixel_text(draw, 4, 25, "FRIDAY", text_color)
+
             else:
-                beer_x = (Config.PIXOO_SCREEN_SIZE - 23) // 2 
-  
+                beer_x = (Config.PIXOO_SCREEN_SIZE - 23) // 2
+            
             if frame_index < len(resized_frames):
                 img.paste(resized_frames[frame_index], (beer_x, beer_y), resized_frames[frame_index])
 
         self._draw_stats(img, draw, data, text_color)
+
+        # If it's Friday, display the time and country code
+        if is_friday and data.get('showDateTime'):
+            self._draw_time(draw, data, current_time)
+
         return img
     
     def _get_frame_index(self, percentage):
@@ -129,22 +134,31 @@ class BeerConsumedTheme(BaseTheme):
 
             draw.point((x, y), fill=color)
 
+        # Initialize current time here
         if data.get('showDateTime'):
-            self._draw_time(draw, data)
+            tz_name = Config.COUNTRY_TIMEZONES.get(data.get("country", "Philippines"), "Asia/Manila")
+            tz = pytz.timezone(tz_name)
+            current_time = datetime.now(tz)
+
+            if current_time.weekday() == 4:  # Check if it's Friday
+                self._draw_time(draw, data, current_time)
 
         return animated
 
-    def _draw_time(self, draw, data):
-        country = data.get("country", "Philippines")
-        tz_name = Config.COUNTRY_TIMEZONES.get(country, "Asia/Manila")
+    def _draw_time(self, draw, data, current_time):
+        time_str = current_time.strftime("%H:%M")
+        text_color = self.parse_color(data.get('text_color', '255,255,255'))
         
-        try:
-            tz = pytz.timezone(tz_name)
-            now = datetime.now(tz)
-            time_str = now.strftime("%H:%M")
-            text_color = self.parse_color(data.get('text_color', '255,255,255'))
+        # Position the time accordingly
+        draw_pixel_text(draw, 6, 32, time_str, text_color)
 
-            draw_pixel_text(draw, 6, 32, time_str, text_color)  # New position for time
-
-        except Exception as e:
-            print(f"Error in drawing time: {e}")
+        # Fetch country code and display
+        country_code_map = {
+            "Australia": "AU",
+            "Philippines": "PH",
+            "United States": "US",
+            "India": "IN",
+            "Colombia": "CO"
+        }
+        country_code = country_code_map.get(data.get("country", "Philippines"), "PH")
+        draw_pixel_text(draw, 48, 3, f"({country_code})", text_color)

@@ -1,10 +1,11 @@
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, jsonify, request, send_from_directory, Response, stream_with_context
 from services.data_service import DataService, BeerDataService
 from services.pixoo_service import PixooService
 from themes.flags_attendance import FlagsAttendanceTheme
 from themes.beer_consumed import BeerConsumedTheme
 from config import Config
 import time
+import requests
 
 main_bp = Blueprint('main', __name__)
 current_theme = None  # Will be initialized based on active theme
@@ -59,21 +60,22 @@ def validate_and_parse_color(data, key):
 def update_kpis():
     global current_theme, pixoo
     data = request.json
-    theme = data.pop("theme", "flags")
-
-
+    theme = data.pop("theme", "flags")  # Extract the theme from the request data
 
     # Validate each color field; modify as needed per key-value pairs
     data['line_color'] = validate_and_parse_color(data, 'line_color')
     data['background_color'] = validate_and_parse_color(data, 'background_color')
     data['text_color'] = validate_and_parse_color(data, 'text_color')
 
+    # Select the theme class and create an instance
     current_theme = THEME_MAP[theme]()
-    pixoo = PixooService()
 
+    # Handle the Pixoo service for rendering the static image
+    pixoo = PixooService()
     static_img = current_theme.render_static(data)
     pixoo.draw_image(static_img)
 
+    # Start the animation loop (if applicable)
     def animation_loop():
         frame_index = 0
         while not pixoo.stop_animation:
@@ -83,4 +85,37 @@ def update_kpis():
             time.sleep(Config.ANIMATION_FRAME_DELAY)
 
     pixoo.start_animation(animation_loop)
+
+    # Based on the theme, write the data to the respective CSV
+    if theme == "flags":
+        # For flags attendance theme, update the flags CSV
+        DataService.write_data(data)
+    elif theme == "beer":
+        # For beer consumed theme, update the beer CSV
+        BeerDataService.write_data(data)
+
     return jsonify(status="success", data=data)
+
+@main_bp.route('/api/chat', methods=['POST'])
+def handle_chat():
+    data = request.json
+    headers = {
+        'Authorization': f'Bearer {Config.DIFY_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+    
+    dify_response = requests.post(
+        'https://aibot.cloudstaff.io/v1/chat-messages',
+        json=data,
+        headers=headers,
+        stream=True
+    )
+    
+    def generate():
+        for chunk in dify_response.iter_content(chunk_size=None):
+            yield chunk
+
+    return Response(
+        stream_with_context(generate()),
+        content_type=dify_response.headers.get('Content-Type', 'text/event-stream')
+    )

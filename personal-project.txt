@@ -5,3 +5,9 @@ transform the output of message to the csv - display it to the divoom
 
 other idea:
 - link multiple divoom pixel boards in one theme.
+
+
+
+4 STATE OF CHATBOT ICON
+SAVE CHAT HISTORY
+displa chat in divoom togle

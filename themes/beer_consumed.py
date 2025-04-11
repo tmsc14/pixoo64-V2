@@ -21,8 +21,8 @@ class BeerConsumedTheme(BaseTheme):
         tz_name = Config.COUNTRY_TIMEZONES.get(country, "Asia/Manila")
         tz = pytz.timezone(tz_name)
         current_time = datetime.now(tz)
-        is_friday = True #Testing
-        #is_friday = current_time.weekday() == 4  # Beer Friday
+        #is_friday = True #Testing
+        is_friday = current_time.weekday() == 4  # Beer Friday
 
         # Load and draw beer frames
         beer_frames = self.load_frames("beer-frames", "bc", 5, resize=None)        
@@ -149,11 +149,16 @@ class BeerConsumedTheme(BaseTheme):
     def _draw_time(self, draw, data, current_time):
         time_str = current_time.strftime("%H:%M")
         text_color = self.parse_color(data.get('text_color', '255,255,255'))
-        
-        # Position the time accordingly
-        draw_pixel_text(draw, 6, 32, time_str, text_color)
+        bg_color = self.parse_color(data.get('background_color', '0,0,0'))
 
-        # Fetch country code and display
+        time_x, time_y = 6, 32
+        time_width = 25
+        time_height = 7 
+
+        draw.rectangle([time_x, time_y, time_x + time_width, time_y + time_height], fill=bg_color)
+
+        draw_pixel_text(draw, time_x, time_y, time_str, text_color)
+
         country_code_map = {
             "Australia": "AU",
             "Philippines": "PH",

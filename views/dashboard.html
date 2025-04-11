@@ -29,6 +29,10 @@
                 <img src="img/theme-thumbnails/beer-thumb.png" alt="Beer Consumed">
                 <h3>Beer Consumed</h3>
             </div>
+            <div class="theme-card" data-theme="chatbot" data-settings="chat-settings">
+                <img src="img/theme-thumbnails/chatbot-thumb.png" alt="AI Chatbot">
+                <h3>AI Chatbot</h3>
+            </div>
         </section>
 
         <!-- Flags & Attendance Settings -->
@@ -177,6 +181,16 @@
             </div>
         </div>
 
+        <div id="chat-settings" class="theme-settings">
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="Type your message...">
+                    <button id="send-chat">Send</button>
+                </div>
+            </div>
+        </div>
+
         <button id="update-values">Update Display</button>
         <div class="status-message"></div>
     </div>
@@ -189,6 +203,80 @@
         function initializeDarkMode() {
             if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
         }
+
+        let currentConversationId = null;
+
+        function appendMessage(content, role) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}`;
+            messageDiv.textContent = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function handleChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Add user message
+            appendMessage(message, 'user');
+            input.value = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: message,
+                        response_mode: "streaming",
+                        user: "pixoo-user", // Replace with your user ID logic
+                        conversation_id: currentConversationId || "",
+                        inputs: {}
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let botMessage = '';
+                let messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message bot';
+                document.getElementById('chat-messages').appendChild(messageDiv);
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const events = chunk.split('\n\n');
+                    
+                    events.forEach(event => {
+                        if (event.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(event.slice(6));
+                                if (data.event === 'message') {
+                                    botMessage += data.answer;
+                                    messageDiv.textContent = botMessage;
+                                } else if (data.event === 'message_end') {
+                                    currentConversationId = data.conversation_id;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing event:', e);
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                appendMessage('Error connecting to chatbot', 'error');
+            }
+        }
+
+        document.getElementById('send-chat').addEventListener('click', handleChatMessage);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleChatMessage();
+        });
     
         document.querySelectorAll('.theme-card').forEach(card => {
             card.addEventListener('click', function() {
@@ -196,6 +284,13 @@
                 this.classList.add('active');
                 document.getElementById(this.dataset.settings).classList.add('active');
                 fetchKPIData();
+            });
+        });
+
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const isChatbot = this.dataset.theme === 'chatbot';
+                document.getElementById('update-values').style.display = isChatbot ? 'none' : 'block';
             });
         });
     

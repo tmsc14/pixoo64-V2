@@ -181,19 +181,37 @@
             </div>
         </div>
 
+        <!-- Chatbot Settings -->
         <div id="chat-settings" class="theme-settings">
-            <div class="chat-container">
-                <div class="chat-messages" id="chat-messages"></div>
-                <div class="chat-input">
-                    <input type="text" id="chat-input" placeholder="Type your message...">
-                    <button id="send-chat">Send</button>
+            <div class="settings-card chat-container">
+                <h2>AI Chatbot</h2>
+                <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"></div>
+                <div class="chat-input-container">
+                    <textarea 
+                        id="chat-input" 
+                        placeholder="Type your message..." 
+                        aria-label="Chat input"
+                        class="chat-input-field"
+                        rows="3"
+                    ></textarea>
+                    <div class="chat-buttons">
+                        <button id="send-chat" aria-label="Send message">
+                            <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M22 2L11 13" stroke-width="2"/>
+                                <path d="M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2"/>
+                            </svg>
+                        </button>
+                        <button id="clear-chat" class="clear-chat-btn">Clear Conversation</button>
+                    </div>
                 </div>
+                <div class="chat-status" id="chat-status" role="status"></div>
             </div>
         </div>
 
         <button id="update-values">Update Display</button>
         <div class="status-message"></div>
     </div>
+
     <script>
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -217,12 +235,22 @@
 
         async function handleChatMessage() {
             const input = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-chat');
+            const statusDiv = document.getElementById('chat-status');
             const message = input.value.trim();
             if (!message) return;
+
+            // Disable input and button during request
+            input.disabled = true;
+            sendButton.disabled = true;
 
             // Add user message
             appendMessage(message, 'user');
             input.value = '';
+
+            // Show loading status
+            statusDiv.textContent = 'Bot is responding...';
+            statusDiv.className = 'chat-status active';
 
             try {
                 const response = await fetch('/api/chat', {
@@ -231,11 +259,13 @@
                     body: JSON.stringify({
                         query: message,
                         response_mode: "streaming",
-                        user: "pixoo-user", // Replace with your user ID logic
+                        user: "pixoo-user",
                         conversation_id: currentConversationId || "",
                         inputs: {}
                     })
                 });
+
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -248,7 +278,7 @@
                     const { done, value } = await reader.read();
                     if (done) break;
 
-                    const chunk = decoder.decode(value);
+                    const chunk = decoder.decode(value, { stream: true });
                     const events = chunk.split('\n\n');
                     
                     events.forEach(event => {
@@ -258,6 +288,7 @@
                                 if (data.event === 'message') {
                                     botMessage += data.answer;
                                     messageDiv.textContent = botMessage;
+                                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
                                 } else if (data.event === 'message_end') {
                                     currentConversationId = data.conversation_id;
                                 }
@@ -267,17 +298,31 @@
                         }
                     });
                 }
+
+                statusDiv.className = 'chat-status';
             } catch (error) {
                 console.error('Chat error:', error);
-                appendMessage('Error connecting to chatbot', 'error');
+                appendMessage('Sorry, something went wrong. Please try again.', 'error');
+                statusDiv.textContent = 'Connection error';
+                statusDiv.className = 'chat-status active error';
+                setTimeout(() => {
+                    statusDiv.className = 'chat-status';
+                }, 3000);
+            } finally {
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.focus();
             }
         }
 
-        document.getElementById('send-chat').addEventListener('click', handleChatMessage);
-        document.getElementById('chat-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleChatMessage();
-        });
-    
+        function clearChat() {
+            const messagesDiv = document.getElementById('chat-messages');
+            const statusDiv = document.getElementById('chat-status');
+            messagesDiv.innerHTML = '';
+            currentConversationId = null;
+            statusDiv.className = 'chat-status';
+        }
+
         document.querySelectorAll('.theme-card').forEach(card => {
             card.addEventListener('click', function() {
                 document.querySelectorAll('.theme-card, .theme-settings').forEach(el => el.classList.remove('active'));
@@ -382,8 +427,8 @@
                 document.getElementById('beer-location').value = data.location || 'Unknown';
                 document.getElementById('beers-total-available').value = data.beers_total_available || 1000;
                 document.getElementById('beers-consumed').value = data.beers_consumed || 0;
-                document.getElementById('country-select-beer').value = data.country || 'Philippines'; // Use data as default
-                document.getElementById('toggle-date-time-beer').checked = data.showDateTime || false; // Reflect CSV
+                document.getElementById('country-select-beer').value = data.country || 'Philippines';
+                document.getElementById('toggle-date-time-beer').checked = data.showDateTime || false;
                 document.getElementById('beer-bg-color').value = rgbToHex(data.background_color || '#000000');
                 document.getElementById('beer-text-color').value = rgbToHex(data.text_color || '#ffffff');
             }
@@ -411,7 +456,18 @@
                 console.error('Error fetching data:', error);
             }
         }
-    
+
+        // Chat event listeners
+        document.getElementById('send-chat').addEventListener('click', handleChatMessage);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleChatMessage();
+            }
+        });
+        document.getElementById('clear-chat').addEventListener('click', clearChat);
+
+        // Initialize
         initializeDarkMode();
         document.getElementById('update-values').addEventListener('click', postKPIData);
         initializeColorPreviews();

@@ -200,8 +200,8 @@ document.querySelectorAll('.theme-card').forEach(card => {
         this.classList.add('active');
         document.getElementById(this.dataset.settings).classList.add('active');
         fetchKPIData();
-        if (this.dataset.theme === 'chatbot') {
-            updatePixooDisplay({ theme: 'chatbot', state: 'smiling' });
+        // No Pixoo update for chatbot theme selection
+        if (this.dataset.theme !== 'chatbot') {
             resetIdleTimer();
         }
     });
@@ -348,4 +348,3 @@ document.getElementById('update-values').addEventListener('click', postKPIData);
 initializeColorPreviews();
 fetchKPIData();
 autoResizeTextarea();
-resetIdleTimer();

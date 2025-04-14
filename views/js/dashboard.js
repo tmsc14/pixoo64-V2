@@ -8,31 +8,36 @@ function initializeDarkMode() {
 }
 
 let currentConversationId = null;
+let idleTimer = null;
+const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
+
+function resetIdleTimer() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+        updatePixooDisplay({ theme: 'chatbot', state: 'sleeping' });
+    }, IDLE_TIMEOUT);
+}
 
 function appendMessage(content, role, isTyping = false) {
     const messagesDiv = document.getElementById('chat-messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}${isTyping ? ' typing' : ''}`;
     
-    // Create timestamp
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const timestampSpan = document.createElement('span');
     timestampSpan.className = 'chat-timestamp';
     timestampSpan.textContent = timestamp;
     timestampSpan.setAttribute('aria-label', `Sent at ${timestamp}`);
 
-    // Create message content
     const contentDiv = document.createElement('div');
     contentDiv.className = 'chat-content';
-    contentDiv.textContent = content; // Preserves line breaks via CSS white-space
+    contentDiv.textContent = content;
 
-    // Append timestamp and content
     messageDiv.appendChild(timestampSpan);
     messageDiv.appendChild(contentDiv);
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-    // Add animation
     messageDiv.style.opacity = '0';
     messageDiv.style.transform = 'translateY(10px)';
     setTimeout(() => {
@@ -40,7 +45,26 @@ function appendMessage(content, role, isTyping = false) {
         messageDiv.style.transform = 'translateY(0)';
     }, 10);
 
-    return messageDiv; // Return for typing indicator removal
+    return messageDiv;
+}
+
+async function updatePixooDisplay(data) {
+    try {
+        const response = await fetch('/api/pixoo-display', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...data,
+                background_color: hexToRgb(document.getElementById('background-color')?.value || '#000000')
+            })
+        });
+        const result = await response.json();
+        if (result.status !== 'success') {
+            console.error('Pixoo display error:', result.message);
+        }
+    } catch (error) {
+        console.error('Pixoo display fetch error:', error);
+    }
 }
 
 async function handleChatMessage() {
@@ -51,15 +75,15 @@ async function handleChatMessage() {
 
     if (!message) return;
 
-    // Disable input and button
     input.disabled = true;
     sendButton.disabled = true;
 
-    // Add user message
+    // Trigger thinking state on Send click
     appendMessage(message, 'user');
+    updatePixooDisplay({ theme: 'chatbot', state: 'thinking' });
+    resetIdleTimer();
     input.value = '';
 
-    // Add typing indicator
     const typingDiv = appendMessage('Bot is typing...', 'bot typing', true);
     statusDiv.textContent = 'Bot is responding...';
     statusDiv.className = 'chat-status active';
@@ -79,7 +103,6 @@ async function handleChatMessage() {
 
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
-        // Remove typing indicator
         typingDiv.remove();
 
         const reader = response.body.getReader();
@@ -88,7 +111,6 @@ async function handleChatMessage() {
         let messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message bot';
         
-        // Add timestamp for bot message
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const timestampSpan = document.createElement('span');
         timestampSpan.className = 'chat-timestamp';
@@ -113,13 +135,14 @@ async function handleChatMessage() {
                     try {
                         const data = JSON.parse(event.slice(6));
                         if (data.event === 'message') {
-                            // Normalize line breaks (e.g., \r\n to \n)
                             const answer = data.answer.replace(/\r\n/g, '\n');
                             botMessage += answer;
                             contentDiv.textContent = botMessage;
                             messagesDiv.scrollTop = messagesDiv.scrollHeight;
                         } else if (data.event === 'message_end') {
                             currentConversationId = data.conversation_id;
+                            updatePixooDisplay({ theme: 'chatbot', state: 'smiling' });
+                            resetIdleTimer();
                         }
                     } catch (e) {
                         console.error('Error parsing event:', e);
@@ -128,7 +151,6 @@ async function handleChatMessage() {
             });
         }
 
-        // Add paragraph breaks for long responses without explicit \n
         if (!botMessage.includes('\n') && botMessage.length > 200) {
             contentDiv.textContent = botMessage.replace(/(.{100,200}\.)\s/g, '$1\n\n');
         }
@@ -139,6 +161,8 @@ async function handleChatMessage() {
         appendMessage('Sorry, something went wrong. Please try again.', 'error');
         statusDiv.textContent = 'Connection error';
         statusDiv.className = 'chat-status active error';
+        updatePixooDisplay({ theme: 'chatbot', state: 'error' });
+        resetIdleTimer();
         setTimeout(() => {
             statusDiv.className = 'chat-status';
         }, 3000);
@@ -159,14 +183,14 @@ function clearChat() {
     input.disabled = false;
     input.value = '';
     input.focus();
+    resetIdleTimer();
 }
 
-// Auto-resize textarea
 function autoResizeTextarea() {
     const textarea = document.getElementById('chat-input');
     textarea.addEventListener('input', () => {
         textarea.style.height = 'auto';
-        textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`; // Cap at 150px
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
     });
 }
 
@@ -176,6 +200,10 @@ document.querySelectorAll('.theme-card').forEach(card => {
         this.classList.add('active');
         document.getElementById(this.dataset.settings).classList.add('active');
         fetchKPIData();
+        if (this.dataset.theme === 'chatbot') {
+            updatePixooDisplay({ theme: 'chatbot', state: 'smiling' });
+            resetIdleTimer();
+        }
     });
 });
 
@@ -320,3 +348,4 @@ document.getElementById('update-values').addEventListener('click', postKPIData);
 initializeColorPreviews();
 fetchKPIData();
 autoResizeTextarea();
+resetIdleTimer();

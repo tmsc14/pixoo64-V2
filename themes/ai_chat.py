@@ -1,21 +1,19 @@
 from PIL import Image, ImageDraw
 from themes.base_theme import BaseTheme
 import os
+from views.fonts.pixel_font import PIXEL_FONT_3X5, draw_pixel_text
 
 class AIChatTheme(BaseTheme):
     def __init__(self):
         super().__init__()
         self.name = "chatbot"
-        # Load pixel art frames for each state
         self.error_frames = self.load_frames("ai-bot/error", 2, resize=(32, 32))
         self.sleeping_frames = self.load_frames("ai-bot/sleeping", 2, resize=(32, 32))
         self.smiling_frames = self.load_frames("ai-bot/smiling", 1, resize=(32, 32))
         self.thinking_frames = self.load_frames("ai-bot/thinking", 4, resize=(32, 32))
-        # Fallback frame if any state is empty
         self.fallback_frame = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
 
     def load_frames(self, folder, num_frames, resize=None):
-        """Load frames with correct naming (frame1.png, frame2.png, etc.)."""
         frames = []
         for i in range(1, num_frames + 1):
             frame_path = os.path.join("views/img", folder, f"frame{i}.png")
@@ -37,14 +35,11 @@ class AIChatTheme(BaseTheme):
         return self.name
 
     def render_static(self, data):
-        """Render a static image for the chatbot state."""
         state = data.get("state", "smiling")
         background_color = self.parse_color(data.get("background_color", "0,0,0"))
-        
-        # Create 64x64 canvas
         img = Image.new("RGB", (64, 64), color=background_color)
+        draw = ImageDraw.Draw(img)
         
-        # Select frame based on state
         frames = {
             "error": self.error_frames,
             "sleeping": self.sleeping_frames,
@@ -52,21 +47,28 @@ class AIChatTheme(BaseTheme):
             "thinking": self.thinking_frames
         }.get(state, self.smiling_frames)
         
-        # Use first frame or fallback
         frame = frames[0] if frames else self.fallback_frame
-        img.paste(frame, (16, 16), frame)  # Center 32x32 frame
+        img.paste(frame, (16, 16), frame)
+        
+        # Send counter
+        send_count = data.get("send_count", 0)
+        if send_count > 0:
+            draw_pixel_text(draw, 2, 2, f"S:{send_count}", color=(255, 255, 255))
+        
+        # Static text for smiling or error
+        if state == "smiling" and data.get("bot_response"):
+            draw_pixel_text(draw, 2, 48, data["bot_response"][:10], color=(255, 255, 255))
+        elif state == "error":
+            draw_pixel_text(draw, 2, 48, "ERR!", color=(255, 255, 255))
         
         return img
 
     def animate_frame(self, data, frame_index, static_bg):
-        """Render an animated frame based on state."""
         state = data.get("state", "smiling")
         background_color = self.parse_color(data.get("background_color", "0,0,0"))
-        
-        # Create canvas
         img = Image.new("RGB", (64, 64), color=background_color)
+        draw = ImageDraw.Draw(img)
         
-        # Select frames
         frames = {
             "error": self.error_frames,
             "sleeping": self.sleeping_frames,
@@ -78,8 +80,28 @@ class AIChatTheme(BaseTheme):
             img.paste(self.fallback_frame, (16, 16), self.fallback_frame)
             return img
         
-        # Select frame (static for smiling, cycling for others)
         frame = frames[0] if state == "smiling" else frames[frame_index % len(frames)]
         img.paste(frame, (16, 16), frame)
+        
+        # Send counter
+        send_count = data.get("send_count", 0)
+        if send_count > 0:
+            draw_pixel_text(draw, 2, 2, f"S:{send_count}", color=(255, 255, 255))
+        
+        # Text animations
+        if state == "thinking" and data.get("message"):
+            message = data["message"][:15]
+            text_width = len(message) * 4  # 3px char + 1px spacing
+            x_offset = 64 - ((frame_index * 4) % (text_width + 64))
+            draw_pixel_text(draw, x_offset, 48, message, color=(255, 255, 255))
+        elif state == "smiling" and data.get("bot_response"):
+            response = data["bot_response"][:10]
+            slide_frames = 8  # Slide over 8 frames
+            x_offset = min(2, 64 - (frame_index * 8) if frame_index < slide_frames else 2)
+            draw_pixel_text(draw, x_offset, 48, response, color=(255, 255, 255))
+        elif state == "error":
+            # Blink ERR! (on/off every 4 frames)
+            if (frame_index // 4) % 2 == 0:
+                draw_pixel_text(draw, 2, 48, "ERR!", color=(255, 255, 255))
         
         return img

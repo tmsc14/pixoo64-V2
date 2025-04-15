@@ -9,12 +9,13 @@ function initializeDarkMode() {
 
 let currentConversationId = null;
 let idleTimer = null;
+let sendCount = 0; // Track send clicks
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 
 function resetIdleTimer() {
     if (idleTimer) clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-        updatePixooDisplay({ theme: 'chatbot', state: 'sleeping' });
+        updatePixooDisplay({ theme: 'chatbot', state: 'sleeping', send_count: sendCount });
     }, IDLE_TIMEOUT);
 }
 
@@ -78,9 +79,8 @@ async function handleChatMessage() {
     input.disabled = true;
     sendButton.disabled = true;
 
-    // Trigger thinking state on Send click
     appendMessage(message, 'user');
-    updatePixooDisplay({ theme: 'chatbot', state: 'thinking' });
+    updatePixooDisplay({ theme: 'chatbot', state: 'thinking', message, send_count: ++sendCount });
     resetIdleTimer();
     input.value = '';
 
@@ -141,7 +141,12 @@ async function handleChatMessage() {
                             messagesDiv.scrollTop = messagesDiv.scrollHeight;
                         } else if (data.event === 'message_end') {
                             currentConversationId = data.conversation_id;
-                            updatePixooDisplay({ theme: 'chatbot', state: 'smiling' });
+                            updatePixooDisplay({ 
+                                theme: 'chatbot', 
+                                state: 'smiling', 
+                                bot_response: botMessage,
+                                send_count: sendCount 
+                            });
                             resetIdleTimer();
                         }
                     } catch (e) {
@@ -161,7 +166,7 @@ async function handleChatMessage() {
         appendMessage('Sorry, something went wrong. Please try again.', 'error');
         statusDiv.textContent = 'Connection error';
         statusDiv.className = 'chat-status active error';
-        updatePixooDisplay({ theme: 'chatbot', state: 'error' });
+        updatePixooDisplay({ theme: 'chatbot', state: 'error', send_count: sendCount });
         resetIdleTimer();
         setTimeout(() => {
             statusDiv.className = 'chat-status';
@@ -179,6 +184,7 @@ function clearChat() {
     const input = document.getElementById('chat-input');
     messagesDiv.innerHTML = '';
     currentConversationId = null;
+    sendCount = 0; // Reset counter
     statusDiv.className = 'chat-status';
     input.disabled = false;
     input.value = '';
@@ -200,7 +206,6 @@ document.querySelectorAll('.theme-card').forEach(card => {
         this.classList.add('active');
         document.getElementById(this.dataset.settings).classList.add('active');
         fetchKPIData();
-        // No Pixoo update for chatbot theme selection
         if (this.dataset.theme !== 'chatbot') {
             resetIdleTimer();
         }

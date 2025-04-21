@@ -8,6 +8,7 @@ class Config:
     ANIMATION_FRAME_DELAY = float(os.getenv("ANIMATION_FRAME_DELAY", 0.5))
     CSV_FILE_PATH = "dataset/data.csv"
     CSV_BEER_FILE_PATH = "dataset/beer_data.csv"
+    CSV_CHATBOT_FILE_PATH = "dataset/ai_data.csv"
     COUNTRY_TIMEZONES = {
         "Australia": "Australia/Sydney",
         "Philippines": "Asia/Manila",

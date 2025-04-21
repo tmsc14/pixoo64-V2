@@ -7,9 +7,14 @@ function initializeDarkMode() {
     if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
 }
 
+function toggleChatSettings() {
+    const panel = document.getElementById('chat-settings-panel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+
 let currentConversationId = null;
 let idleTimer = null;
-let sendCount = 0; // Track send clicks
+let sendCount = 0;
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 
 function resetIdleTimer() {
@@ -32,10 +37,19 @@ function appendMessage(content, role, isTyping = false) {
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'chat-content';
-    contentDiv.textContent = content;
+    if (isTyping) {
+        contentDiv.className = 'typing-indicator';
+        contentDiv.innerHTML = '<span></span><span></span><span></span>';
+    } else {
+        contentDiv.textContent = content;
+    }
 
-    messageDiv.appendChild(timestampSpan);
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'avatar';
+
+    messageDiv.appendChild(avatarDiv);
     messageDiv.appendChild(contentDiv);
+    messageDiv.appendChild(timestampSpan);
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
@@ -56,7 +70,8 @@ async function updatePixooDisplay(data) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...data,
-                background_color: hexToRgb(document.getElementById('background-color')?.value || '#000000')
+                background_color: hexToRgb(document.getElementById('chatbot-bg-color')?.value || '#000000'),
+                show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true
             })
         });
         const result = await response.json();
@@ -80,11 +95,17 @@ async function handleChatMessage() {
     sendButton.disabled = true;
 
     appendMessage(message, 'user');
-    updatePixooDisplay({ theme: 'chatbot', state: 'thinking', message, send_count: ++sendCount });
+    updatePixooDisplay({ 
+        theme: 'chatbot', 
+        state: 'thinking', 
+        message, 
+        send_count: ++sendCount,
+        show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true
+    });
     resetIdleTimer();
     input.value = '';
 
-    const typingDiv = appendMessage('Bot is typing...', 'bot typing', true);
+    const typingDiv = appendMessage('', 'bot', true);
     statusDiv.textContent = 'Bot is responding...';
     statusDiv.className = 'chat-status active';
 
@@ -119,8 +140,12 @@ async function handleChatMessage() {
         
         const contentDiv = document.createElement('div');
         contentDiv.className = 'chat-content';
-        messageDiv.appendChild(timestampSpan);
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'avatar';
+        
+        messageDiv.appendChild(avatarDiv);
         messageDiv.appendChild(contentDiv);
+        messageDiv.appendChild(timestampSpan);
         document.getElementById('chat-messages').appendChild(messageDiv);
 
         while (true) {
@@ -145,7 +170,8 @@ async function handleChatMessage() {
                                 theme: 'chatbot', 
                                 state: 'smiling', 
                                 bot_response: botMessage,
-                                send_count: sendCount 
+                                send_count: sendCount,
+                                show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true
                             });
                             resetIdleTimer();
                         }
@@ -166,7 +192,12 @@ async function handleChatMessage() {
         appendMessage('Sorry, something went wrong. Please try again.', 'error');
         statusDiv.textContent = 'Connection error';
         statusDiv.className = 'chat-status active error';
-        updatePixooDisplay({ theme: 'chatbot', state: 'error', send_count: sendCount });
+        updatePixooDisplay({ 
+            theme: 'chatbot', 
+            state: 'error', 
+            send_count: sendCount,
+            show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true
+        });
         resetIdleTimer();
         setTimeout(() => {
             statusDiv.className = 'chat-status';
@@ -184,7 +215,7 @@ function clearChat() {
     const input = document.getElementById('chat-input');
     messagesDiv.innerHTML = '';
     currentConversationId = null;
-    sendCount = 0; // Reset counter
+    sendCount = 0;
     statusDiv.className = 'chat-status';
     input.disabled = false;
     input.value = '';
@@ -196,7 +227,7 @@ function autoResizeTextarea() {
     const textarea = document.getElementById('chat-input');
     textarea.addEventListener('input', () => {
         textarea.style.height = 'auto';
-        textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 100)}px`;
     });
 }
 
@@ -212,47 +243,62 @@ document.querySelectorAll('.theme-card').forEach(card => {
     });
 });
 
-document.querySelectorAll('.theme-card').forEach(card => {
-    card.addEventListener('click', function() {
-        const isChatbot = this.dataset.theme === 'chatbot';
-        document.getElementById('update-values').style.display = isChatbot ? 'none' : 'block';
-    });
-});
-
 async function postKPIData() {
     const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
     const button = document.getElementById('update-values');
     const statusMessage = document.querySelector('.status-message');
 
+    console.log(`postKPIData called for theme: ${activeTheme}`); // Debug log
+
     const data = {
         theme: activeTheme,
         background_color: hexToRgb(document.getElementById(
-            activeTheme === 'flags' ? 'background-color' : 'beer-bg-color'
-        ).value),
+            activeTheme === 'flags' ? 'background-color' : 
+            activeTheme === 'beer' ? 'beer-bg-color' : 'chatbot-bg-color'
+        )?.value || '#000000'),
         text_color: hexToRgb(document.getElementById(
-            activeTheme === 'flags' ? 'text-color' : 'beer-text-color'
-        ).value)
+            activeTheme === 'flags' ? 'text-color' : 
+            activeTheme === 'beer' ? 'beer-text-color' : '#ffffff'
+        )?.value || '#ffffff')
     };
 
-    if (activeTheme === 'flags') {
-        data.green_flags = parseInt(document.getElementById('green-flags').value);
-        data.red_flags = parseInt(document.getElementById('red-flags').value);
-        data.attendance = parseInt(document.getElementById('attendance').value);
-        data.showDateTime = document.getElementById('toggle-date-time').checked;
-        data.country = document.getElementById('country-select').value;
-        data.line_color = rgbToHex(document.getElementById('line-color').value);
-    } else {
-        data.location = document.getElementById('beer-location').value;
-        data.beers_total_available = parseInt(document.getElementById('beers-total-available').value);
-        data.beers_consumed = parseInt(document.getElementById('beers-consumed').value);
-        data.country = document.getElementById('country-select-beer').value;
-        data.showDateTime = document.getElementById('toggle-date-time-beer').checked;
-    }
-
     try {
+        if (activeTheme === 'chatbot') {
+            data.show_chat = document.getElementById('chatbot-show-chat')?.checked ?? true;
+        } else if (activeTheme === 'flags') {
+            data.green_flags = parseInt(document.getElementById('green-flags').value) || 0;
+            data.red_flags = parseInt(document.getElementById('red-flags').value) || 0;
+            data.attendance = parseInt(document.getElementById('attendance').value) || 0;
+            data.showDateTime = document.getElementById('toggle-date-time').checked;
+            data.country = document.getElementById('country-select').value;
+            data.line_color = hexToRgb(document.getElementById('line-color').value);
+        } else if (activeTheme === 'beer') {
+            console.log('Collecting Beer Consumed data...'); // Debug log
+            const location = document.getElementById('beer-location')?.value?.trim() || 'Unknown';
+            const beersTotalAvailable = parseInt(document.getElementById('beers-total-available')?.value) || 1000;
+            const beersConsumed = parseInt(document.getElementById('beers-consumed')?.value) || 0;
+            const country = document.getElementById('country-select-beer')?.value || 'Philippines';
+            const showDateTime = document.getElementById('toggle-date-time-beer')?.checked ?? false;
+
+            if (!location) throw new Error('Location is required');
+            if (beersTotalAvailable < 1) throw new Error('Total beers available must be at least 1');
+            if (beersConsumed < 0) throw new Error('Beers consumed cannot be negative');
+
+            data.location = location;
+            data.beers_total_available = beersTotalAvailable;
+            data.beers_consumed = beersConsumed;
+            data.country = country;
+            data.showDateTime = showDateTime;
+            console.log('Beer Consumed data:', data); // Debug log
+        } else {
+            throw new Error('Invalid theme');
+        }
+
         button.disabled = true;
         button.textContent = 'Updating...';
         statusMessage.style.display = 'none';
+
+        console.log('Sending /api/update-kpis request:', JSON.stringify(data)); // Debug log
 
         const response = await fetch('/api/update-kpis', {
             method: 'POST',
@@ -260,12 +306,21 @@ async function postKPIData() {
             body: JSON.stringify(data)
         });
 
-        if (!response.ok) throw new Error('Server error');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} ${errorText}`);
+        }
+
+        const result = await response.json();
+        if (result.status !== 'success') {
+            throw new Error(result.message || 'Update failed');
+        }
+
         statusMessage.textContent = 'Display updated successfully!';
         statusMessage.className = 'status-message success';
     } catch (error) {
-        console.error('Error:', error);
-        statusMessage.textContent = 'Error updating display. Please try again.';
+        console.error('postKPIData error:', error);
+        statusMessage.textContent = `Error updating display: ${error.message}`;
         statusMessage.className = 'status-message error';
     } finally {
         statusMessage.style.display = 'block';
@@ -294,15 +349,18 @@ function hexToRgb(hex) {
 function updateUI(data) {
     const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
     
-    if (activeTheme === 'flags') {
+    if (activeTheme === 'chatbot') {
+        document.getElementById('chatbot-bg-color').value = rgbToHex(data.background_color || '#000000');
+        document.getElementById('chatbot-show-chat').checked = data.show_chat ?? true;
+    } else if (activeTheme === 'flags') {
         document.getElementById('green-flags').value = data.green_flags || 0;
         document.getElementById('red-flags').value = data.red_flags || 0;
         document.getElementById('attendance').value = data.attendance || 0;
         document.getElementById('toggle-date-time').checked = data.showDateTime;
-        document.getElementById('country-select').value = data.country;
-        document.getElementById('background-color').value = rgbToHex(data.background_color);
-        document.getElementById('text-color').value = rgbToHex(data.text_color);
-        document.getElementById('line-color').value = rgbToHex(data.line_color);
+        document.getElementById('country-select').value = data.country || 'Australia';
+        document.getElementById('background-color').value = rgbToHex(data.background_color || '#000000');
+        document.getElementById('text-color').value = rgbToHex(data.text_color || '#ffffff');
+        document.getElementById('line-color').value = rgbToHex(data.line_color || '#ffffff');
     } else {
         document.getElementById('beer-location').value = data.location || 'Unknown';
         document.getElementById('beers-total-available').value = data.beers_total_available || 1000;

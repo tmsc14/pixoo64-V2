@@ -9,6 +9,7 @@
         .theme-settings { display: none; }
         .theme-settings.active { display: block; }
         #beer-settings .color-picker-group { grid-template-columns: repeat(2, 1fr); }
+        #chat-settings .color-picker-group { grid-template-columns: 1fr; }
     </style>
 </head>
 <body>
@@ -136,10 +137,7 @@
                     <h2>Date & Time Settings</h2>
                     <div class="form-group">
                         <label for="country-select-beer">Country/Timezone</label>
-                        <select id="country-select-beer">
-                            <option value="Australia">Australia</option>
-                            <option value="Philippines">Philippines</option>
-                            <option value="United States">United States</option>
+                        <select id="scrollTopchatbot-show-chat">United States</option>
                             <option value="India">India</option>
                             <option value="Colombia">Colombia</option>
                         </select>
@@ -183,28 +181,56 @@
 
         <!-- Chatbot Settings -->
         <div id="chat-settings" class="theme-settings">
-            <div class="settings-card chat-container">
-                <h2>AI Chatbot</h2>
-                <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"></div>
-                <div class="chat-input-container">
-                    <textarea 
-                        id="chat-input" 
-                        placeholder="Type your message..." 
-                        aria-label="Chat input"
-                        class="chat-input-field"
-                        rows="3"
-                    ></textarea>
-                    <div class="chat-buttons">
-                        <button id="send-chat" aria-label="Send message">
-                            <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M22 2L11 13" stroke-width="2"/>
-                                <path d="M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2"/>
+            <div class="settings-container">
+                <div class="settings-card chat-container">
+                    <div class="chat-header">
+                        <h2>AI Chatbot</h2>
+                        <button class="settings-toggle" onclick="toggleChatSettings()">
+                            <svg viewBox="0 0 24 24" class="settings-icon">
+                                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.3-.06.62-.06.94s.02.64.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.08-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
                             </svg>
                         </button>
-                        <button id="clear-chat" class="clear-chat-btn">Clear Conversation</button>
                     </div>
+                    <div class="chat-settings-panel" id="chat-settings-panel" style="display: none;">
+                        <h3>Chat Display Settings</h3>
+                        <div class="form-group">
+                            <label>Background</label>
+                            <div class="color-picker-container">
+                                <div class="color-preview" id="chatbot-bg-preview"></div>
+                                <input type="color" id="chatbot-bg-color" class="color-picker-input" value="#000000">
+                                <button class="color-picker-button" onclick="document.getElementById('chatbot-bg-color').click()">
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Show Chat Responses</label>
+                            <label class="switch">
+                                <input type="checkbox" id="chatbot-show-chat" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"></div>
+                    <div class="chat-input-container">
+                        <textarea 
+                            id="chat-input" 
+                            placeholder="Type your message..." 
+                            aria-label="Chat input"
+                            class="chat-input-field"
+                        ></textarea>
+                        <div class="chat-buttons">
+                            <button id="send-chat" aria-label="Send message">
+                                <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M22 2L11 13" stroke-width="2"/>
+                                    <path d="M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2"/>
+                                </svg>
+                            </button>
+                            <button id="clear-chat" class="clear-chat-btn" aria-label="Clear conversation">Clear</button>
+                        </div>
+                    </div>
+                    <div class="chat-status" id="chat-status" role="status"></div>
                 </div>
-                <div class="chat-status" id="chat-status" role="status"></div>
             </div>
         </div>
 

@@ -7,6 +7,7 @@ from themes.ai_chat import AIChatTheme
 from config import Config
 import time
 import requests
+import logging
 
 main_bp = Blueprint('main', __name__)
 current_theme = None
@@ -24,10 +25,20 @@ def serve_dashboard():
 @main_bp.route("/api/kpi-data", methods=["GET"])
 def get_kpi_data():
     theme = request.args.get("theme", "flags")
-    if theme == "chatbot":
-        return jsonify(ChatbotDataService.read_data())
-    service = DataService if theme == "flags" else BeerDataService
-    return jsonify(service.read_data())
+    try:
+        if theme == "chatbot":
+            data = ChatbotDataService.read_data()
+        else:
+            service = DataService if theme == "flags" else BeerDataService
+            data = service.read_data()
+        if not data:
+            logging.warning(f"No data returned for theme: {theme}")
+            return jsonify({"status": "error", "message": "No data available"}), 404
+        logging.info(f"kpi-data retrieved for {theme}: {data}")
+        return jsonify(data)
+    except Exception as e:
+        logging.error(f"Error fetching kpi-data for {theme}: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def validate_and_parse_color(data, key):
     """Ensure that we are getting a valid color string or default."""
@@ -36,7 +47,7 @@ def validate_and_parse_color(data, key):
     try:
         color_str = color_str.lstrip('#')
         if 'NaN' in color_str.upper():
-            print(f"Invalid color '{color_str}', using default '{default_color}'.")
+            logging.warning(f"Invalid color '{color_str}', using default '{default_color}'")
             return default_color
         if len(color_str) == 6:
             return f"{int(color_str[0:2], 16)},{int(color_str[2:4], 16)},{int(color_str[4:6], 16)}"
@@ -45,7 +56,7 @@ def validate_and_parse_color(data, key):
             if len(parts) == 3 and all(part.isdigit() for part in parts):
                 return color_str
     except Exception as e:
-        print(f"Failed parsing color {key}: {color_str}, error: {e}, defaulting to {default_color}")
+        logging.error(f"Failed parsing color {key}: {color_str}, error: {e}, defaulting to {default_color}")
         return default_color
     return default_color
 
@@ -54,33 +65,48 @@ def update_kpis():
     global current_theme, pixoo
     data = request.json
     theme = data.pop("theme", "flags")
-    data['line_color'] = validate_and_parse_color(data, 'line_color')
-    data['background_color'] = validate_and_parse_color(data, 'background_color')
-    data['text_color'] = validate_and_parse_color(data, 'text_color')
-    current_theme = THEME_MAP[theme]()
-    pixoo = PixooService()
-    static_img = current_theme.render_static(data)
-    pixoo.draw_image(static_img)
-    def animation_loop():
-        frame_index = 0
-        while not pixoo.stop_animation:
-            animated_frame = current_theme.animate_frame(data, frame_index, static_img)
-            pixoo.draw_image(animated_frame)
-            frame_index += 1
-            time.sleep(Config.ANIMATION_FRAME_DELAY)
-    pixoo.start_animation(animation_loop)
-    if theme == "flags":
-        DataService.write_data(data)
-    elif theme == "beer":
-        BeerDataService.write_data(data)
-    elif theme == "chatbot":
-        ChatbotDataService.write_data({
-            'background_color': data.get('background_color', '0,0,0'),
-            'show_chat': data.get('show_chat', True)
-        })
-    else:
-        return jsonify({"status": "error", "message": "Invalid theme"}), 400
-    return jsonify(status="success", data=data)
+    logging.info(f"Received update-kpis for {theme}: {data}")
+    
+    try:
+        data['line_color'] = validate_and_parse_color(data, 'line_color')
+        data['background_color'] = validate_and_parse_color(data, 'background_color')
+        data['text_color'] = validate_and_parse_color(data, 'text_color')
+        
+        current_theme = THEME_MAP[theme]()
+        pixoo = PixooService()
+        static_img = current_theme.render_static(data)
+        pixoo.draw_image(static_img)
+        logging.info(f"Rendered static image for {theme}, country: {data.get('country', 'Philippines')}")
+        
+        def animation_loop():
+            frame_index = 0
+            while not pixoo.stop_animation:
+                animated_frame = current_theme.animate_frame(data, frame_index, static_img)
+                pixoo.draw_image(animated_frame)
+                frame_index += 1
+                time.sleep(Config.ANIMATION_FRAME_DELAY)
+        pixoo.start_animation(animation_loop)
+        
+        if theme == "flags":
+            DataService.write_data(data)
+            logging.info("Successfully wrote to flags CSV")
+        elif theme == "beer":
+            BeerDataService.write_data(data)
+            logging.info(f"Successfully wrote to beer CSV, country: {data.get('country', 'Philippines')}")
+        elif theme == "chatbot":
+            ChatbotDataService.write_data({
+                'background_color': data.get('background_color', '0,0,0'),
+                'show_chat': data.get('show_chat', True)
+            })
+            logging.info("Successfully wrote to chatbot CSV")
+        else:
+            logging.error(f"Invalid theme: {theme}")
+            return jsonify({"status": "error", "message": "Invalid theme"}), 400
+            
+        return jsonify(status="success", data=data)
+    except Exception as e:
+        logging.error(f"Error updating KPIs for {theme}: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @main_bp.route('/api/chat', methods=['POST'])
 def handle_chat():
@@ -108,18 +134,26 @@ def pixoo_display():
     global current_theme, pixoo
     data = request.json
     theme = data.get("theme")
-    if theme not in THEME_MAP:
-        return jsonify({"status": "error", "message": "Invalid theme"}), 400
-    current_theme = THEME_MAP[theme]()
-    pixoo = PixooService()
-    static_img = current_theme.render_static(data)
-    pixoo.draw_image(static_img)
-    def animation_loop():
-        frame_index = 0
-        while not pixoo.stop_animation:
-            animated_frame = current_theme.animate_frame(data, frame_index, static_img)
-            pixoo.draw_image(animated_frame)
-            frame_index += 1
-            time.sleep(Config.ANIMATION_FRAME_DELAY / 2 if data.get("state") == "thinking" else Config.ANIMATION_FRAME_DELAY)
-    pixoo.start_animation(animation_loop)
-    return jsonify({"status": "success"})
+    logging.info(f"Received pixoo-display for {theme}: {data}")
+    try:
+        if theme not in THEME_MAP:
+            logging.error(f"Invalid theme: {theme}")
+            return jsonify({"status": "error", "message": "Invalid theme"}), 400
+        current_theme = THEME_MAP[theme]()
+        pixoo = PixooService()
+        static_img = current_theme.render_static(data)
+        pixoo.draw_image(static_img)
+        logging.info(f"Rendered static image for {theme}, country: {data.get('country', 'Philippines')}")
+        
+        def animation_loop():
+            frame_index = 0
+            while not pixoo.stop_animation:
+                animated_frame = current_theme.animate_frame(data, frame_index, static_img)
+                pixoo.draw_image(animated_frame)
+                frame_index += 1
+                time.sleep(Config.ANIMATION_FRAME_DELAY / 2 if data.get("state") == "thinking" else Config.ANIMATION_FRAME_DELAY)
+        pixoo.start_animation(animation_loop)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        logging.error(f"Error updating Pixoo display for {theme}: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500

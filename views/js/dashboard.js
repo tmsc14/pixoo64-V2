@@ -16,6 +16,7 @@ let currentConversationId = null;
 let idleTimer = null;
 let sendCount = 0;
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
+let themeDataCache = {};
 
 function resetIdleTimer() {
     if (idleTimer) clearTimeout(idleTimer);
@@ -235,9 +236,14 @@ document.querySelectorAll('.theme-card').forEach(card => {
     card.addEventListener('click', function() {
         document.querySelectorAll('.theme-card, .theme-settings').forEach(el => el.classList.remove('active'));
         this.classList.add('active');
-        document.getElementById(this.dataset.settings).classList.add('active');
+        const settingsPanel = document.getElementById(this.dataset.settings);
+        settingsPanel.classList.add('active');
+        const theme = this.dataset.theme;
+        if (themeDataCache[theme]) {
+            updateUI(themeDataCache[theme]);
+        }
         fetchKPIData();
-        if (this.dataset.theme !== 'chatbot') {
+        if (theme !== 'chatbot') {
             resetIdleTimer();
         }
     });
@@ -248,7 +254,7 @@ async function postKPIData() {
     const button = document.getElementById('update-values');
     const statusMessage = document.querySelector('.status-message');
 
-    console.log(`postKPIData called for theme: ${activeTheme}`); // Debug log
+    console.log(`postKPIData called for theme: ${activeTheme}`);
 
     const data = {
         theme: activeTheme,
@@ -273,23 +279,24 @@ async function postKPIData() {
             data.country = document.getElementById('country-select').value;
             data.line_color = hexToRgb(document.getElementById('line-color').value);
         } else if (activeTheme === 'beer') {
-            console.log('Collecting Beer Consumed data...'); // Debug log
+            console.log('Collecting Beer Consumed data...');
             const location = document.getElementById('beer-location')?.value?.trim() || 'Unknown';
             const beersTotalAvailable = parseInt(document.getElementById('beers-total-available')?.value) || 1000;
             const beersConsumed = parseInt(document.getElementById('beers-consumed')?.value) || 0;
-            const country = document.getElementById('country-select-beer')?.value || 'Philippines';
+            const country = document.getElementById('country-select-beer')?.value;
             const showDateTime = document.getElementById('toggle-date-time-beer')?.checked ?? false;
 
             if (!location) throw new Error('Location is required');
             if (beersTotalAvailable < 1) throw new Error('Total beers available must be at least 1');
             if (beersConsumed < 0) throw new Error('Beers consumed cannot be negative');
+            if (!country) throw new Error('Country is required');
 
             data.location = location;
             data.beers_total_available = beersTotalAvailable;
             data.beers_consumed = beersConsumed;
             data.country = country;
             data.showDateTime = showDateTime;
-            console.log('Beer Consumed data:', data); // Debug log
+            console.log('Beer Consumed data:', { ...data, country });
         } else {
             throw new Error('Invalid theme');
         }
@@ -298,7 +305,7 @@ async function postKPIData() {
         button.textContent = 'Updating...';
         statusMessage.style.display = 'none';
 
-        console.log('Sending /api/update-kpis request:', JSON.stringify(data)); // Debug log
+        console.log('Sending /api/update-kpis request:', JSON.stringify(data));
 
         const response = await fetch('/api/update-kpis', {
             method: 'POST',
@@ -333,7 +340,8 @@ async function postKPIData() {
 function rgbToHex(rgb) {
     if (!rgb) return '#000000';
     const parts = rgb.split(',').map(Number);
-    return `#${parts.map(p => p.toString(16).padStart(2, '0')).join('')}`;
+    if (parts.length !== 3 || parts.some(isNaN)) return '#000000';
+    return `#${parts.map(p => Math.max(0, Math.min(255, p)).toString(16).padStart(2, '0')).join('')}`;
 }
 
 function hexToRgb(hex) {
@@ -347,30 +355,105 @@ function hexToRgb(hex) {
 }
 
 function updateUI(data) {
-    const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
-    
-    if (activeTheme === 'chatbot') {
-        document.getElementById('chatbot-bg-color').value = rgbToHex(data.background_color || '#000000');
-        document.getElementById('chatbot-show-chat').checked = data.show_chat ?? true;
-    } else if (activeTheme === 'flags') {
-        document.getElementById('green-flags').value = data.green_flags || 0;
-        document.getElementById('red-flags').value = data.red_flags || 0;
-        document.getElementById('attendance').value = data.attendance || 0;
-        document.getElementById('toggle-date-time').checked = data.showDateTime;
-        document.getElementById('country-select').value = data.country || 'Australia';
-        document.getElementById('background-color').value = rgbToHex(data.background_color || '#000000');
-        document.getElementById('text-color').value = rgbToHex(data.text_color || '#ffffff');
-        document.getElementById('line-color').value = rgbToHex(data.line_color || '#ffffff');
-    } else {
-        document.getElementById('beer-location').value = data.location || 'Unknown';
-        document.getElementById('beers-total-available').value = data.beers_total_available || 1000;
-        document.getElementById('beers-consumed').value = data.beers_consumed || 0;
-        document.getElementById('country-select-beer').value = data.country || 'Philippines';
-        document.getElementById('toggle-date-time-beer').checked = data.showDateTime || false;
-        document.getElementById('beer-bg-color').value = rgbToHex(data.background_color || '#000000');
-        document.getElementById('beer-text-color').value = rgbToHex(data.text_color || '#ffffff');
+    const activeTheme = document.querySelector('.theme-card.active')?.dataset.theme;
+    console.log(`updateUI called for theme: ${activeTheme}, data:`, data);
+
+    if (!activeTheme) {
+        console.warn('No active theme, caching data');
+        themeDataCache[data.theme || 'unknown'] = data;
+        return;
     }
-    initializeColorPreviews();
+
+    const settingsPanel = document.getElementById({
+        chatbot: 'chat-settings',
+        flags: 'flags-settings',
+        beer: 'beer-settings'
+    }[activeTheme]);
+
+    if (!settingsPanel?.classList.contains('active')) {
+        console.log(`Settings panel for ${activeTheme} not active, caching data`);
+        themeDataCache[activeTheme] = data;
+        return;
+    }
+
+    try {
+        if (activeTheme === 'chatbot') {
+            const bgColor = rgbToHex(data.background_color || '0,0,0');
+            const bgInput = document.getElementById('chatbot-bg-color');
+            if (bgInput) {
+                bgInput.value = bgColor;
+                document.getElementById('chatbot-bg-preview').style.backgroundColor = bgColor;
+            } else {
+                console.warn('chatbot-bg-color not found');
+            }
+            const showChatInput = document.getElementById('chatbot-show-chat');
+            if (showChatInput) {
+                showChatInput.checked = data.show_chat ?? true;
+            }
+        } else if (activeTheme === 'flags') {
+            const inputs = {
+                'green-flags': data.green_flags || 0,
+                'red-flags': data.red_flags || 0,
+                'attendance': data.attendance || 0,
+                'country-select': data.country || 'Australia',
+                'background-color': rgbToHex(data.background_color || '0,0,0'),
+                'text-color': rgbToHex(data.text_color || '255,255,255'),
+                'line-color': rgbToHex(data.line_color || '255,255,255')
+            };
+            Object.entries(inputs).forEach(([id, value]) => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.value = value;
+                    if (id.includes('color')) {
+                        document.getElementById(id.replace('-color', '-preview')).style.backgroundColor = value;
+                    }
+                } else {
+                    console.warn(`${id} not found`);
+                }
+            });
+            const toggle = document.getElementById('toggle-date-time');
+            if (toggle) {
+                toggle.checked = data.showDateTime ?? false;
+            }
+        } else if (activeTheme === 'beer') {
+            const inputs = {
+                'beer-location': data.location || 'Unknown',
+                'beers-total-available': data.beers_total_available || 1000,
+                'beers-consumed': data.beers_consumed || 0,
+                'country-select-beer': data.country || 'Philippines',
+                'beer-bg-color': rgbToHex(data.background_color || '0,0,0'),
+                'beer-text-color': rgbToHex(data.text_color || '255,255,255')
+            };
+            Object.entries(inputs).forEach(([id, value]) => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.value = value;
+                    if (id.includes('color')) {
+                        document.getElementById(id.replace('-color', '-preview')).style.backgroundColor = value;
+                    }
+                    if (id === 'country-select-beer') {
+                        console.log(`Set country-select-beer to: ${value}`);
+                    }
+                } else {
+                    console.warn(`${id} not found for beer theme`);
+                }
+            });
+            const toggle = document.getElementById('toggle-date-time-beer');
+            if (toggle) {
+                toggle.checked = data.showDateTime ?? false;
+            } else {
+                console.warn('toggle-date-time-beer not found');
+            }
+            console.log('Beer UI updated:', {
+                bgColor: inputs['beer-bg-color'],
+                textColor: inputs['beer-text-color'],
+                location: inputs['beer-location'],
+                country: inputs['country-select-beer']
+            });
+        }
+    } catch (error) {
+        console.error(`Error updating UI for ${activeTheme}:`, error);
+    }
 }
 
 function initializeColorPreviews() {
@@ -379,23 +462,37 @@ function initializeColorPreviews() {
         const previewBox = document.getElementById(previewId);
         if (previewBox) {
             previewBox.style.backgroundColor = input.value;
-            input.addEventListener('input', () => previewBox.style.backgroundColor = input.value);
+            input.addEventListener('input', () => {
+                previewBox.style.backgroundColor = input.value;
+            });
         }
     });
 }
 
 async function fetchKPIData() {
     try {
-        const activeTheme = document.querySelector('.theme-card.active').dataset.theme;
-        const response = await fetch(`/api/kpi-data?theme=${activeTheme}`);
+        const activeTheme = document.querySelector('.theme-card.active')?.dataset.theme || 'flags';
+        console.log(`fetchKPIData called for theme: ${activeTheme}`);
+        const response = await fetch(`/api/kpi-data?theme=${activeTheme}`, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}: ${await response.text()}`);
+        }
         const data = await response.json();
+        console.log(`fetchKPIData received data for ${activeTheme}:`, data);
+        themeDataCache[activeTheme] = data;
         updateUI(data);
     } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('fetchKPIData error:', error);
+        const statusMessage = document.querySelector('.status-message');
+        statusMessage.textContent = `Error loading data: ${error.message}`;
+        statusMessage.className = 'status-message error';
+        statusMessage.style.display = 'block';
+        setTimeout(() => statusMessage.style.display = 'none', 3000);
     }
 }
 
-// Chat event listeners
 document.getElementById('send-chat').addEventListener('click', handleChatMessage);
 document.getElementById('chat-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -405,9 +502,16 @@ document.getElementById('chat-input').addEventListener('keydown', (e) => {
 });
 document.getElementById('clear-chat').addEventListener('click', clearChat);
 
-// Initialize
-initializeDarkMode();
-document.getElementById('update-values').addEventListener('click', postKPIData);
-initializeColorPreviews();
-fetchKPIData();
-autoResizeTextarea();
+document.addEventListener('DOMContentLoaded', () => {
+    initializeDarkMode();
+    document.getElementById('update-values').addEventListener('click', postKPIData);
+    const defaultThemeCard = document.querySelector('.theme-card[data-theme="flags"]');
+    if (defaultThemeCard) {
+        document.querySelectorAll('.theme-card, .theme-settings').forEach(el => el.classList.remove('active'));
+        defaultThemeCard.classList.add('active');
+        document.getElementById(defaultThemeCard.dataset.settings).classList.add('active');
+    }
+    initializeColorPreviews();
+    fetchKPIData();
+    autoResizeTextarea();
+});

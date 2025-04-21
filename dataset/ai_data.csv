@@ -1,2 +1,2 @@
-background_color,text_color,conversation_history
-0,0,0,255,255,255,""
+background_color,show_chat
+"149,95,95",True

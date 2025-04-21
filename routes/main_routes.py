@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, send_from_directory, Response, stream_with_context
-from services.data_service import DataService, BeerDataService
+from services.data_service import DataService, BeerDataService, ChatbotDataService
 from services.pixoo_service import PixooService
 from themes.flags_attendance import FlagsAttendanceTheme
 from themes.beer_consumed import BeerConsumedTheme
@@ -24,6 +24,8 @@ def serve_dashboard():
 @main_bp.route("/api/kpi-data", methods=["GET"])
 def get_kpi_data():
     theme = request.args.get("theme", "flags")
+    if theme == "chatbot":
+        return jsonify(ChatbotDataService.read_data())
     service = DataService if theme == "flags" else BeerDataService
     return jsonify(service.read_data())
 
@@ -71,6 +73,13 @@ def update_kpis():
         DataService.write_data(data)
     elif theme == "beer":
         BeerDataService.write_data(data)
+    elif theme == "chatbot":
+        ChatbotDataService.write_data({
+            'background_color': data.get('background_color', '0,0,0'),
+            'show_chat': data.get('show_chat', True)
+        })
+    else:
+        return jsonify({"status": "error", "message": "Invalid theme"}), 400
     return jsonify(status="success", data=data)
 
 @main_bp.route('/api/chat', methods=['POST'])

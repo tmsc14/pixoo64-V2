@@ -22,7 +22,6 @@ class DataService:
     @classmethod
     def write_data(cls, data):
         try:
-            # Coerce all values to strings for CSV compatibility
             cleaned_data = {
                 field: str(data.get(field, cls.default_data().get(field)))
                 for field in cls.CSV_FIELDS
@@ -96,4 +95,43 @@ class BeerDataService:
             "text_color": "255,255,255",
             "showDateTime": "false",
             "country": "Philippines"
+        }
+
+class ChatbotDataService:
+    CSV_FIELDS = [
+        "background_color", 
+        "show_chat"
+    ]
+
+    @classmethod
+    def read_data(cls):
+        try:
+            with open(Config.CSV_CHATBOT_FILE_PATH, "r") as file:
+                csv_reader = csv.DictReader(file)
+                data = next(csv_reader, cls.default_data())
+                data['show_chat'] = data.get('show_chat', 'true').lower() == 'true'
+                return data
+        except Exception as e:
+            print(f"Error reading chatbot data: {e}")
+            return cls.default_data()
+
+    @classmethod
+    def write_data(cls, data):
+        try:
+            cleaned_data = {
+                field: str(data.get(field, cls.default_data().get(field)))
+                for field in cls.CSV_FIELDS
+            }
+            with open(Config.CSV_CHATBOT_FILE_PATH, "w", newline="") as file:
+                writer = csv.DictWriter(file, fieldnames=cls.CSV_FIELDS)
+                writer.writeheader()
+                writer.writerow(cleaned_data)
+        except Exception as e:
+            print(f"Error writing chatbot data: {e}")
+
+    @staticmethod
+    def default_data():
+        return {
+            "background_color": "0,0,0",
+            "show_chat": "true"
         }

@@ -11,3 +11,9 @@ other idea:
 4 STATE OF CHATBOT ICON
 SAVE CHAT HISTORY
 displa chat in divoom togle
+
+
+list for next week
+- create rotating star gif art
+- apply codes given by grok
+- test

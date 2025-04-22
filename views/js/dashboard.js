@@ -15,8 +15,23 @@ function toggleChatSettings() {
 let currentConversationId = null;
 let idleTimer = null;
 let sendCount = 0;
+let totalTokensUsed = 0;
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 let themeDataCache = {};
+
+// Token rates per country (in USD per token)
+const TOKEN_RATES = {
+    'Australia': 0.0002,
+    'Philippines': 0.0001,
+    'United States': 0.00015,
+    'India': 0.00008,
+    'Colombia': 0.00012
+};
+
+function calculateTokenCost(tokens, country) {
+    const rate = TOKEN_RATES[country] || TOKEN_RATES['Australia'];
+    return (tokens * rate).toFixed(4);
+}
 
 function resetIdleTimer() {
     if (idleTimer) clearTimeout(idleTimer);
@@ -75,7 +90,10 @@ async function updatePixooDisplay(data) {
             body: JSON.stringify({
                 ...data,
                 background_color: hexToRgb(document.getElementById('chatbot-bg-color')?.value || '#000000'),
-                show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true
+                show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true,
+                tokens_used: totalTokensUsed,
+                token_cost: calculateTokenCost(totalTokensUsed, document.getElementById('country-select-chatbot')?.value || 'Australia'),
+                country: document.getElementById('country-select-chatbot')?.value || 'Australia'
             })
         });
         const result = await response.json();
@@ -170,12 +188,16 @@ async function handleChatMessage() {
                             messagesDiv.scrollTop = messagesDiv.scrollHeight;
                         } else if (data.event === 'message_end') {
                             currentConversationId = data.conversation_id;
+                            totalTokensUsed += data.token_count || 0;
                             updatePixooDisplay({ 
                                 theme: 'chatbot', 
                                 state: 'smiling', 
                                 bot_response: botMessage,
                                 send_count: sendCount,
-                                show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true
+                                show_chat: document.getElementById('chatbot-show-chat')?.checked ?? true,
+                                tokens_used: totalTokensUsed,
+                                token_cost: calculateTokenCost(totalTokensUsed, document.getElementById('country-select-chatbot')?.value || 'Australia'),
+                                country: document.getElementById('country-select-chatbot')?.value || 'Australia'
                             });
                             resetIdleTimer();
                         }
@@ -220,11 +242,20 @@ function clearChat() {
     messagesDiv.innerHTML = '';
     currentConversationId = null;
     sendCount = 0;
+    totalTokensUsed = 0;  // Reset tokens on chat clear
     statusDiv.className = 'chat-status';
     input.disabled = false;
     input.value = '';
     input.focus();
     resetIdleTimer();
+    updatePixooDisplay({
+        theme: 'chatbot',
+        state: 'smiling',
+        send_count: sendCount,
+        tokens_used: totalTokensUsed,
+        token_cost: calculateTokenCost(totalTokensUsed, document.getElementById('country-select-chatbot')?.value || 'Australia'),
+        country: document.getElementById('country-select-chatbot')?.value || 'Australia'
+    });
 }
 
 function autoResizeTextarea() {
@@ -272,6 +303,9 @@ async function postKPIData() {
     try {
         if (activeTheme === 'chatbot') {
             data.show_chat = document.getElementById('chatbot-show-chat')?.checked ?? true;
+            data.country = document.getElementById('country-select-chatbot')?.value || 'Australia';
+            data.tokens_used = totalTokensUsed;
+            data.token_cost = calculateTokenCost(totalTokensUsed, data.country);
         } else if (activeTheme === 'flags') {
             data.green_flags = parseInt(document.getElementById('green-flags').value) || 0;
             data.red_flags = parseInt(document.getElementById('red-flags').value) || 0;
@@ -391,6 +425,11 @@ function updateUI(data) {
             if (showChatInput) {
                 showChatInput.checked = data.show_chat ?? true;
             }
+            const countryInput = document.getElementById('country-select-chatbot');
+            if (countryInput) {
+                countryInput.value = data.country || 'Australia';
+            }
+            totalTokensUsed = data.tokens_used || 0;
         } else if (activeTheme === 'flags') {
             const inputs = {
                 'green-flags': data.green_flags || 0,

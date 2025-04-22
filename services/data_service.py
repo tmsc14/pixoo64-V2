@@ -100,7 +100,10 @@ class BeerDataService:
 class ChatbotDataService:
     CSV_FIELDS = [
         "background_color", 
-        "show_chat"
+        "show_chat",
+        "tokens_used",
+        "country",
+        "token_cost"
     ]
 
     @classmethod
@@ -110,6 +113,8 @@ class ChatbotDataService:
                 csv_reader = csv.DictReader(file)
                 data = next(csv_reader, cls.default_data())
                 data['show_chat'] = data.get('show_chat', 'true').lower() == 'true'
+                data['tokens_used'] = int(data.get('tokens_used', 0))
+                data['token_cost'] = float(data.get('token_cost', 0.0))
                 return data
         except Exception as e:
             print(f"Error reading chatbot data: {e}")
@@ -133,5 +138,8 @@ class ChatbotDataService:
     def default_data():
         return {
             "background_color": "0,0,0",
-            "show_chat": "true"
+            "show_chat": "true",
+            "tokens_used": "0",
+            "country": "Australia",
+            "token_cost": "0.0"
         }

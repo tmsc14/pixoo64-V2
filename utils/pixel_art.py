@@ -83,9 +83,11 @@ def create_waveform_frames():
         img = Image.new("RGBA", (16, 8), (0, 0, 0, 0))  # Transparent 16x8 canvas
         draw = ImageDraw.Draw(img)
         
-        # Draw vertical bars for the waveform
+        # Draw vertical bars for the waveform, centered in 16px width
+        total_width = len(heights) * 3 - 1  # 5 bars, 3px each (including spacing) = 14px
+        start_x = (16 - total_width) // 2  # Center the waveform
         for x, height in enumerate(heights):
-            x_pos = x * 3 + 1  # Space bars 3 pixels apart
+            x_pos = start_x + x * 3  # Space bars 3 pixels apart
             y_top = 4 - height // 2  # Center vertically
             y_bottom = 4 + height // 2
             draw.line([(x_pos, y_top), (x_pos, y_bottom)], fill=wave_color, width=1)

@@ -4,6 +4,8 @@ import os
 from views.fonts.pixel_font import PIXEL_FONT_3X5, draw_pixel_text
 from utils.pixel_art import create_speech_bubble, create_pulse_node_frames, create_waveform_frames
 import textwrap
+from datetime import datetime
+import pytz
 
 class AIChatTheme(BaseTheme):
     def __init__(self):
@@ -16,7 +18,7 @@ class AIChatTheme(BaseTheme):
         self.fallback_frame = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
         self.bubble_frame = create_speech_bubble()
         self.custom_frames = create_pulse_node_frames()
-        self.waveform_frames = create_waveform_frames()  # Load waveform animation
+        self.waveform_frames = create_waveform_frames()
 
     def load_frames(self, folder, num_frames, resize=None):
         frames = []
@@ -46,6 +48,18 @@ class AIChatTheme(BaseTheme):
         lines = textwrap.wrap(text, width=max_width, break_long_words=True)
         return lines if lines else [""]
 
+    def get_current_time(self, country):
+        # Map countries to timezones
+        timezone_map = {
+            "Australia": "Australia/Sydney",
+            "Philippines": "Asia/Manila",
+            "United States": "America/New_York",
+            "India": "Asia/Kolkata",
+            "Colombia": "America/Bogota"
+        }
+        tz = timezone_map.get(country, "Australia/Sydney")
+        return datetime.now(pytz.timezone(tz)).strftime("%H:%M")
+
     def render_static(self, data):
         state = data.get("state", "smiling")
         background_color = self.parse_color(data.get("background_color", "0,0,0"))
@@ -63,9 +77,6 @@ class AIChatTheme(BaseTheme):
         frame = frames[0] if frames else self.fallback_frame
         img.paste(frame, (16, 8), frame)  # Bot icon at (16, 8)
         
-        send_count = data.get("send_count", 0)
-        draw_pixel_text(draw, 2, 2, f"S:{send_count}", color=(255, 255, 255), spacing=1)
-        
         if show_chat:
             if state in ("smiling", "thinking") and (data.get("bot_response") or data.get("message")):
                 message = (data.get("bot_response") or data.get("message"))[:40]  # Limit to 40 chars
@@ -79,11 +90,26 @@ class AIChatTheme(BaseTheme):
                 if self.bubble_frame:
                     img.paste(self.bubble_frame, (20, 40), self.bubble_frame)
         else:
-            if state == "smiling":
-                draw_pixel_text(draw, 8, 48, "PIXOO!", color=(255, 255, 255), spacing=1)
-            # Add waveform animation at (20, 40)
-            waveform_frame = self.waveform_frames[0]  # Static frame for render_static
-            img.paste(waveform_frame, (20, 40), waveform_frame)
+            # Display tokens, cost, time, and waveform when chat is off
+            tokens_used = data.get("tokens_used", 0)
+            token_cost = data.get("token_cost", 0.0)
+            country = data.get("country", "Australia")
+            current_time = self.get_current_time(country)
+            
+            # Time above center (y=28, centered horizontally)
+            time_width = len(current_time) * 4  # Approx 4 pixels per char with spacing=1
+            time_x = (64 - time_width) // 2  # Center horizontally
+            draw_pixel_text(draw, time_x, 28, current_time, color=(255, 255, 255), spacing=1)
+            
+            # Tokens and cost on the left at the bottom
+            draw_pixel_text(draw, 2, 40, f"Tokens: {tokens_used}", color=(255, 255, 255), spacing=1)
+            draw_pixel_text(draw, 2, 48, f"Cost: ${token_cost}", color=(255, 255, 255), spacing=1)
+            
+            # Centered waveform
+            waveform_frame = self.waveform_frames[0]
+            waveform_width = waveform_frame.size[0]  # Get actual width of waveform
+            waveform_x = (64 - waveform_width) // 2  # Center horizontally
+            img.paste(waveform_frame, (waveform_x, 40), waveform_frame)
         
         return img
 
@@ -110,9 +136,6 @@ class AIChatTheme(BaseTheme):
                 frame = self.custom_frames[frame_index % len(self.custom_frames)]
             img.paste(frame, (16, 8), frame)
         
-        send_count = data.get("send_count", 0)
-        draw_pixel_text(draw, 2, 2, f"S:{send_count}", color=(255, 255, 255), spacing=1)
-        
         if show_chat:
             if state in ("thinking", "smiling") and (data.get("message") or data.get("bot_response")):
                 message = (data.get("message") or data.get("bot_response"))[:40]
@@ -138,12 +161,35 @@ class AIChatTheme(BaseTheme):
                     if self.bubble_frame:
                         img.paste(self.bubble_frame, (20, 40), self.bubble_frame)
         else:
-            if state == "smiling":
-                draw_pixel_text(draw, 8, 48, "PIXOO!", color=(255, 255, 255), spacing=1)
-            # Add waveform animation at (20, 40)
+            # Display tokens, cost, time, and waveform when chat is off
+            tokens_used = data.get("tokens_used", 0)
+            token_cost = data.get("token_cost", 0.0)
+            country = data.get("country", "Australia")
+            
+            # Re-fetch the current time for real-time updates
+            timezone_map = {
+                "Australia": "Australia/Sydney",
+                "Philippines": "Asia/Manila",
+                "United States": "America/New_York",
+                "India": "Asia/Kolkata",
+                "Colombia": "America/Bogota"
+            }
+            tz = timezone_map.get(country, "Australia/Sydney")
+            current_time = datetime.now(pytz.timezone(tz)).strftime("%H:%M")
+            
+            # Time above center (y=28, centered horizontally)
+            time_width = len(current_time) * 4  # Approx 4 pixels per char with spacing=1
+            time_x = (64 - time_width) // 2  # Center horizontally
+            draw_pixel_text(draw, time_x, 1, current_time, color=(255, 255, 255), spacing=1)
+            
+            # Tokens and cost on the left at the bottom
+            draw_pixel_text(draw, 2, 50, f"Tokens: {tokens_used}", color=(255, 255, 255), spacing=1)
+            draw_pixel_text(draw, 2, 58, f"Cost: ${token_cost}", color=(255, 255, 255), spacing=1)
+            
+            # Centered waveform
             waveform_frame = self.waveform_frames[frame_index % len(self.waveform_frames)]
-            img.paste(waveform_frame, (20, 40), waveform_frame)
-            if state == "thinking" and self.custom_frames:
-                pass  # Pulse node handled above
+            waveform_width = waveform_frame.size[0]  # Get actual width of waveform
+            waveform_x = (64 - waveform_width) // 2  # Center horizontally
+            img.paste(waveform_frame, (waveform_x, 37), waveform_frame)
         
         return img

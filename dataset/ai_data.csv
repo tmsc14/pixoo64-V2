@@ -1,2 +1,2 @@
-background_color,show_chat
-"36,68,18",False
+background_color,show_chat,tokens_used,country,token_cost
+"36,68,18",False,0,Australia,0.0

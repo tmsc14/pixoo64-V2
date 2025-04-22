@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 from themes.base_theme import BaseTheme
 import os
 from views.fonts.pixel_font import PIXEL_FONT_3X5, draw_pixel_text
-from utils.pixel_art import create_speech_bubble, create_pulse_node_frames
+from utils.pixel_art import create_speech_bubble, create_pulse_node_frames, create_waveform_frames
 import textwrap
 
 class AIChatTheme(BaseTheme):
@@ -16,6 +16,7 @@ class AIChatTheme(BaseTheme):
         self.fallback_frame = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
         self.bubble_frame = create_speech_bubble()
         self.custom_frames = create_pulse_node_frames()
+        self.waveform_frames = create_waveform_frames()  # Load waveform animation
 
     def load_frames(self, folder, num_frames, resize=None):
         frames = []
@@ -80,6 +81,9 @@ class AIChatTheme(BaseTheme):
         else:
             if state == "smiling":
                 draw_pixel_text(draw, 8, 48, "PIXOO!", color=(255, 255, 255), spacing=1)
+            # Add waveform animation at (20, 40)
+            waveform_frame = self.waveform_frames[0]  # Static frame for render_static
+            img.paste(waveform_frame, (20, 40), waveform_frame)
         
         return img
 
@@ -136,7 +140,10 @@ class AIChatTheme(BaseTheme):
         else:
             if state == "smiling":
                 draw_pixel_text(draw, 8, 48, "PIXOO!", color=(255, 255, 255), spacing=1)
-            elif state == "thinking" and self.custom_frames:
+            # Add waveform animation at (20, 40)
+            waveform_frame = self.waveform_frames[frame_index % len(self.waveform_frames)]
+            img.paste(waveform_frame, (20, 40), waveform_frame)
+            if state == "thinking" and self.custom_frames:
                 pass  # Pulse node handled above
         
         return img

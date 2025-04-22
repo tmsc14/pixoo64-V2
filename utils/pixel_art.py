@@ -68,3 +68,28 @@ def create_pulse_node_frames():
         frames.append(img)
     
     return frames
+
+def create_waveform_frames():
+    """Create 3 frames of a 16x8 waveform animation (blue signal wave)."""
+    frames = []
+    wave_heights = [
+        [2, 4, 6, 4, 2],  # Frame 1: Small wave
+        [3, 6, 3, 6, 3],  # Frame 2: Medium wave
+        [4, 2, 6, 2, 4]   # Frame 3: Alternating wave
+    ]
+    wave_color = (0, 128, 255, 255)  # Bright blue
+    
+    for heights in wave_heights:
+        img = Image.new("RGBA", (16, 8), (0, 0, 0, 0))  # Transparent 16x8 canvas
+        draw = ImageDraw.Draw(img)
+        
+        # Draw vertical bars for the waveform
+        for x, height in enumerate(heights):
+            x_pos = x * 3 + 1  # Space bars 3 pixels apart
+            y_top = 4 - height // 2  # Center vertically
+            y_bottom = 4 + height // 2
+            draw.line([(x_pos, y_top), (x_pos, y_bottom)], fill=wave_color, width=1)
+        
+        frames.append(img)
+    
+    return frames

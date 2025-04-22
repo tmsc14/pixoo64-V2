@@ -182,6 +182,10 @@ select:focus {
     cursor: pointer;
 }
 
+.chat-settings-panel .color-picker-container {
+    width: 200px;
+}
+
 .color-picker-button {
     padding: 8px 12px;
     background-color: var(--secondary-color);

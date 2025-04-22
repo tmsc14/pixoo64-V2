@@ -20,9 +20,12 @@ let themeDataCache = {};
 
 function resetIdleTimer() {
     if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-        updatePixooDisplay({ theme: 'chatbot', state: 'sleeping', send_count: sendCount });
-    }, IDLE_TIMEOUT);
+    const activeTheme = document.querySelector('.theme-card.active')?.dataset.theme;
+    if (activeTheme === 'chatbot') {
+        idleTimer = setTimeout(() => {
+            updatePixooDisplay({ theme: 'chatbot', state: 'sleeping', send_count: sendCount });
+        }, IDLE_TIMEOUT);
+    }
 }
 
 function appendMessage(content, role, isTyping = false) {
@@ -243,9 +246,7 @@ document.querySelectorAll('.theme-card').forEach(card => {
             updateUI(themeDataCache[theme]);
         }
         fetchKPIData();
-        if (theme !== 'chatbot') {
-            resetIdleTimer();
-        }
+        resetIdleTimer();
     });
 });
 

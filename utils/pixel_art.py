@@ -95,3 +95,29 @@ def create_waveform_frames():
         frames.append(img)
     
     return frames
+
+def get_pixel_icons():
+    """Return the pixel art icons for token consumption and cost."""
+    token_icon = [
+        [0, 0, 1, 1, 1, 1, 0, 0],  # Coin top outline
+        [0, 1, 1, 0, 0, 1, 1, 0],  # Coin sides
+        [1, 1, 0, 7, 7, 0, 1, 1],  # Star top + coin
+        [1, 1, 0, 7, 7, 7, 1, 1],  # Star middle + coin
+        [1, 1, 0, 7, 7, 0, 1, 1],  # Star bottom + coin
+        [1, 1, 0, 0, 0, 0, 1, 1],  # Coin sides
+        [0, 1, 1, 0, 0, 1, 1, 0],  # Coin sides
+        [0, 0, 1, 1, 1, 1, 0, 0],  # Coin bottom outline
+    ]
+
+    cost_icon = [
+        [0, 0, 0, 7, 7, 0, 0, 0],  # Dollar sign top
+        [0, 0, 7, 7, 7, 7, 0, 0],  # Dollar crossbar
+        [0, 0, 0, 7, 7, 0, 0, 0],  # Dollar middle
+        [0, 0, 7, 7, 7, 7, 0, 0],  # Dollar crossbar
+        [0, 0, 0, 7, 7, 0, 0, 0],  # Dollar bottom
+        [0, 1, 1, 1, 1, 1, 1, 0],  # Top coin outline
+        [0, 1, 1, 1, 1, 1, 1, 0],  # Middle coin overlap
+        [0, 0, 1, 1, 1, 1, 0, 0],  # Bottom coin outline
+    ]
+
+    return token_icon, cost_icon

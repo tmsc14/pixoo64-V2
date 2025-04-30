@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 from themes.base_theme import BaseTheme
 import os
 from views.fonts.pixel_font import PIXEL_FONT_3X5, draw_pixel_text
-from utils.pixel_art import create_speech_bubble, create_pulse_node_frames, create_waveform_frames
+from utils.pixel_art import create_speech_bubble, create_pulse_node_frames, create_waveform_frames, get_pixel_icons
 import textwrap
 from datetime import datetime
 import pytz
@@ -19,6 +19,9 @@ class AIChatTheme(BaseTheme):
         self.bubble_frame = create_speech_bubble()
         self.custom_frames = create_pulse_node_frames()
         self.waveform_frames = create_waveform_frames()
+
+        # Load pixel art icons from pixel_art.py
+        self.token_icon, self.cost_icon = get_pixel_icons()
 
     def load_frames(self, folder, num_frames, resize=None):
         frames = []
@@ -62,8 +65,6 @@ class AIChatTheme(BaseTheme):
         # Base rate: $0.00001 per token in USD
         rate_per_token_usd = 0.00001
         cost_usd = tokens_used * rate_per_token_usd
-
-        # Currency mapping with exchange rates (approximate as of April 2025)
         currency_map = {
             "Australia": {"label": "AUD", "exchange_rate": 1.45},
             "Philippines": {"label": "PHP", "exchange_rate": 57.00},
@@ -75,16 +76,12 @@ class AIChatTheme(BaseTheme):
         currency_info = currency_map.get(country, currency_map["Australia"])
         cost_local = cost_usd * currency_info["exchange_rate"]
         
-        # Round to 2 decimal places
         cost_local = round(cost_local, 2)
         
-        # Format cost with 2 decimal places, using decimal point
         cost_str = f"{cost_local:.2f}"
         
-        # Ensure the full string (label + cost) fits within ~10 characters
         full_str = f"{currency_info['label']} {cost_str}"
         if len(full_str) > 10:
-            # Truncate the integer part to fit, preserving the decimal part
             label_len = len(currency_info['label']) + 1  # +1 for space
             max_cost_len = 10 - label_len  # e.g., 10 - 4 = 6
             if len(cost_str) > max_cost_len:
@@ -97,6 +94,15 @@ class AIChatTheme(BaseTheme):
             full_str = f"{currency_info['label']} {cost_str}"
         
         return full_str
+
+    def draw_pixel_icon(self, draw, x_start, y_start, icon, primary_color, highlight_color=None):
+        """Draw a pixel art icon at the specified position."""
+        for y, row in enumerate(icon):
+            for x, pixel in enumerate(row):
+                if pixel == 1:
+                    draw.point((x_start + x, y_start + y), fill=primary_color)
+                elif pixel == 7 and highlight_color:  # Highlight color for specific pixels
+                    draw.point((x_start + x, y_start + y), fill=highlight_color)
 
     def render_static(self, data):
         state = data.get("state", "smiling")
@@ -113,7 +119,7 @@ class AIChatTheme(BaseTheme):
         }.get(state, self.smiling_frames)
         
         frame = frames[0] if frames else self.fallback_frame
-        img.paste(frame, (16, 8), frame)  # Bot icon at (16, 8)
+        img.paste(frame, (16, 5), frame)  # Bot icon moved 3 pixels higher (from y=8 to y=5)
 
         if show_chat:
             if state in ("smiling", "thinking") and (data.get("bot_response") or data.get("message")):
@@ -140,11 +146,13 @@ class AIChatTheme(BaseTheme):
             waveform_frame = self.waveform_frames[0]
             waveform_width = waveform_frame.size[0]
             waveform_x = (64 - waveform_width) // 2
-            img.paste(waveform_frame, (waveform_x, 37), waveform_frame)
+            img.paste(waveform_frame, (waveform_x, 34), waveform_frame)  # Moved 3 pixels higher (from y=37 to y=34)
             
-            # Updated positions: Tokens at y=51, Cost at y=58
-            draw_pixel_text(draw, 2, 51, f"Tokens: {tokens_used}", color=(255, 255, 255), spacing=1)
-            draw_pixel_text(draw, 2, 58, f"Cost: {token_cost}", color=(255, 255, 255), spacing=1)
+            self.draw_pixel_icon(draw, 2, 47, self.token_icon, primary_color=(255, 215, 0), highlight_color=(255, 255, 255))
+            draw_pixel_text(draw, 12, 47, str(tokens_used), color=(255, 255, 255), spacing=1)  # Moved to y=45 to match icon
+            
+            self.draw_pixel_icon(draw, 2, 53, self.cost_icon, primary_color=(255, 215, 0), highlight_color=(0, 255, 0))
+            draw_pixel_text(draw, 12, 53, token_cost, color=(255, 255, 255), spacing=1)  # Moved to y=55 to match icon
         
         return img
 
@@ -164,12 +172,12 @@ class AIChatTheme(BaseTheme):
         }.get(state, self.smiling_frames)
         
         if not frames:
-            img.paste(self.fallback_frame, (16, 8), self.fallback_frame)
+            img.paste(self.fallback_frame, (16, 5), self.fallback_frame)  # Moved 3 pixels higher (from y=8 to y=5)
         else:
             frame = frames[0] if state == "smiling" else frames[frame_index % len(frames)]
             if not show_chat and self.custom_frames and state == "thinking":
                 frame = self.custom_frames[frame_index % len(self.custom_frames)]
-            img.paste(frame, (16, 8), frame)
+            img.paste(frame, (16, 5), frame)  # Moved 3 pixels higher (from y=8 to y=5)
         
         if show_chat:
             if state in ("thinking", "smiling") and (data.get("message") or data.get("bot_response")):
@@ -201,16 +209,18 @@ class AIChatTheme(BaseTheme):
             token_cost = self.calculate_token_cost(tokens_used, country)
             
             time_width = len(current_time) * 4
-            time_x = (64 - time_width) // 2
+            time_x = (68 - time_width) // 2
             draw_pixel_text(draw, time_x, 1, current_time, color=(255, 255, 255), spacing=1)
             
             waveform_frame = self.waveform_frames[frame_index % len(self.waveform_frames)]
             waveform_width = waveform_frame.size[0]
-            waveform_x = (64 - waveform_width) // 2
-            img.paste(waveform_frame, (waveform_x, 37), waveform_frame)
+            waveform_x = (67 - waveform_width) // 2
+            img.paste(waveform_frame, (waveform_x, 34), waveform_frame)  # Moved 3 pixels higher (from y=37 to y=34)
             
-            # Updated positions: Tokens at y=51, Cost at y=58
-            draw_pixel_text(draw, 2, 51, f"Tokens: {tokens_used}", color=(255, 255, 255), spacing=1)
-            draw_pixel_text(draw, 2, 58, f"Cost: {token_cost}", color=(255, 255, 255), spacing=1)
+            self.draw_pixel_icon(draw, 2, 45, self.token_icon, primary_color=(255, 215, 0), highlight_color=(255, 255, 255))
+            draw_pixel_text(draw, 12, 47, str(tokens_used), color=(255, 255, 255), spacing=1)  # Moved to y=45 to match icon
+            
+            self.draw_pixel_icon(draw, 2, 55, self.cost_icon, primary_color=(255, 215, 0), highlight_color=(0, 255, 0))
+            draw_pixel_text(draw, 12, 57, token_cost, color=(255, 255, 255), spacing=1)  # Moved to y=55 to match icon
         
         return img

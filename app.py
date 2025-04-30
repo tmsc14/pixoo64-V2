@@ -1,8 +1,10 @@
 from flask import Flask
 from routes.main_routes import main_bp
+from config import Config
 
 def create_app():
     app = Flask(__name__, static_folder="views", static_url_path="")
+    app.secret_key = Config.FLASK_SECRET_KEY
     app.register_blueprint(main_bp)
     return app
 

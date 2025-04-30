@@ -102,8 +102,7 @@ class ChatbotDataService:
         "background_color", 
         "show_chat",
         "tokens_used",
-        "country",
-        "token_cost"
+        "country"
     ]
 
     @classmethod
@@ -114,7 +113,6 @@ class ChatbotDataService:
                 data = next(csv_reader, cls.default_data())
                 data['show_chat'] = data.get('show_chat', 'true').lower() == 'true'
                 data['tokens_used'] = int(data.get('tokens_used', 0))
-                data['token_cost'] = float(data.get('token_cost', 0.0))
                 return data
         except Exception as e:
             print(f"Error reading chatbot data: {e}")
@@ -140,6 +138,5 @@ class ChatbotDataService:
             "background_color": "0,0,0",
             "show_chat": "true",
             "tokens_used": "0",
-            "country": "Australia",
-            "token_cost": "0.0"
+            "country": "Australia"
         }

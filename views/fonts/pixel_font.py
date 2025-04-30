@@ -55,6 +55,8 @@ PIXEL_FONT_3X5 = {
     '=': [[0,0,0], [1,1,1], [0,0,0], [1,1,1], [0,0,0]],
     ':': [[0], [1], [0], [1], [0]],
     ' ': [[0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0]],
+    '.': [[0], [0], [0], [0], [1]],  # Decimal point: single pixel at bottom
+    ',': [[0], [0], [0], [1], [1]],  # Comma: pixel at bottom with a small tail
 }
 
 def draw_pixel_text(draw: ImageDraw.Draw, x_start: int, y_start: int, 

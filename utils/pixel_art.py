@@ -1,42 +1,62 @@
 from PIL import Image, ImageDraw
 
 def create_speech_bubble():
-    """Create a 40x20 speech bubble with white fill, 2px black outline, rounded corners, and 4x4 tail."""
-    img = Image.new("RGBA", (44, 24), (0, 0, 0, 0))  # Transparent, includes tail
+    """Create a 48x24 speech bubble with white fill, pixel art border, rounded corners, and 4x4 tail."""
+    img = Image.new("RGBA", (52, 28), (0, 0, 0, 0))  # Transparent, includes tail
     draw = ImageDraw.Draw(img)
     
-    # White fill for main bubble (40x20)
+    # White fill for main bubble (48x24)
     fill_color = (255, 255, 255, 255)
     draw.rectangle(
-        [(2, 2), (41, 21)],  # Inner area
+        [(2, 2), (49, 25)],  # Inner area
         fill=fill_color
     )
     
-    # Black 2px outline, rounded rectangle
-    outline_color = (0, 0, 0, 255)
-    draw.rectangle(
-        [(2, 2), (41, 21)],
-        outline=outline_color,
-        width=2
-    )
+    # Pixel art border (2px thick, with a pattern)
+    border_color = (0, 0, 0, 255)
+    pattern_color = (150, 150, 150, 255)  # Gray for border pattern
+    # Top and bottom borders
+    for x in range(2, 50):
+        if (x % 4) in (0, 1):  # Alternating pattern
+            draw.point((x, 1), fill=border_color)
+            draw.point((x, 0), fill=border_color)
+            draw.point((x, 26), fill=border_color)
+            draw.point((x, 27), fill=border_color)
+        else:
+            draw.point((x, 1), fill=pattern_color)
+            draw.point((x, 0), fill=pattern_color)
+            draw.point((x, 26), fill=pattern_color)
+            draw.point((x, 27), fill=pattern_color)
+    # Left and right borders
+    for y in range(2, 26):
+        if (y % 4) in (0, 1):
+            draw.point((1, y), fill=border_color)
+            draw.point((0, y), fill=border_color)
+            draw.point((50, y), fill=border_color)
+            draw.point((51, y), fill=border_color)
+        else:
+            draw.point((1, y), fill=pattern_color)
+            draw.point((0, y), fill=pattern_color)
+            draw.point((50, y), fill=pattern_color)
+            draw.point((51, y), fill=pattern_color)
     
     # Round corners with ellipses
-    draw.ellipse([(0, 0), (4, 4)], fill=outline_color)  # Top-left
-    draw.ellipse([(39, 0), (43, 4)], fill=outline_color)  # Top-right
-    draw.ellipse([(0, 19), (4, 23)], fill=outline_color)  # Bottom-left
-    draw.ellipse([(39, 19), (43, 23)], fill=outline_color)  # Bottom-right
+    draw.ellipse([(0, 0), (4, 4)], fill=border_color)  # Top-left
+    draw.ellipse([(47, 0), (51, 4)], fill=border_color)  # Top-right
+    draw.ellipse([(0, 23), (4, 27)], fill=border_color)  # Bottom-left
+    draw.ellipse([(47, 23), (51, 27)], fill=border_color)  # Bottom-right
     
     # Fill corners to match background
     draw.rectangle([(0, 0), (1, 1)], fill=(0, 0, 0, 0))  # Top-left
-    draw.rectangle([(42, 0), (43, 1)], fill=(0, 0, 0, 0))  # Top-right
-    draw.rectangle([(0, 22), (1, 23)], fill=(0, 0, 0, 0))  # Bottom-left
-    draw.rectangle([(42, 22), (43, 23)], fill=(0, 0, 0, 0))  # Bottom-right
+    draw.rectangle([(50, 0), (51, 1)], fill=(0, 0, 0, 0))  # Top-right
+    draw.rectangle([(0, 26), (1, 27)], fill=(0, 0, 0, 0))  # Bottom-left
+    draw.rectangle([(50, 26), (51, 27)], fill=(0, 0, 0, 0))  # Bottom-right
     
     # 4x4 tail (bottom-left, pointing up to bot)
     draw.polygon(
-        [(2, 20), (2, 24), (6, 20)],  # Triangle pointing up
+        [(2, 24), (2, 28), (6, 24)],  # Triangle pointing up
         fill=fill_color,
-        outline=outline_color
+        outline=border_color
     )
     
     return img
@@ -121,3 +141,39 @@ def get_pixel_icons():
     ]
 
     return token_icon, cost_icon
+
+def create_chat_stars():
+    """Create 3 frames of a 4x4 star animation for chat bubble decoration."""
+    frames = []
+    star_patterns = [
+        [
+            [0, 0, 1, 0],  # Frame 1: Small star
+            [0, 1, 0, 1],
+            [1, 0, 1, 0],
+            [0, 1, 0, 0],
+        ],
+        [
+            [0, 1, 1, 0],  # Frame 2: Medium star
+            [1, 0, 0, 1],
+            [1, 0, 0, 1],
+            [0, 1, 1, 0],
+        ],
+        [
+            [1, 0, 0, 1],  # Frame 3: Rotated star
+            [0, 1, 1, 0],
+            [0, 1, 1, 0],
+            [1, 0, 0, 1],
+        ],
+    ]
+    star_color = (255, 215, 0, 255)  # Yellow
+    
+    for pattern in star_patterns:
+        img = Image.new("RGBA", (4, 4), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        for y, row in enumerate(pattern):
+            for x, pixel in enumerate(row):
+                if pixel == 1:
+                    draw.point((x, y), fill=star_color)
+        frames.append(img)
+    
+    return frames
